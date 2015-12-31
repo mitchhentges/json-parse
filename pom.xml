@@ -33,5 +33,18 @@
             <version>4.11</version>
         </dependency>
     </dependencies>
+
+    <scm>
+        <connection>scm:git:git@github.com:mitchhentges/json-parse.git</connection>
+        <developerConnection>scm:git:git@github.com:mitchhentges/json-parse.git</developerConnection>
+        <url>git@github.com:mitchhentges/json-parse.git</url>
+    </scm>
+
+    <developers>
+        <developer>
+            <name>Mitchell Hentges</name>
+            <email>mitchhentges@gmail.com</email>
+        </developer>
+    </developers>
 </project>
 
