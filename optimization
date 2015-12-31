@@ -1,0 +1,2 @@
+* Lookahead for maps and lists, determining initial size in advance
+* Keep the current object in the stack, just in case, rather than thrashing it back and forth (when lots of nested objs)
