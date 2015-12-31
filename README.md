@@ -58,27 +58,27 @@ jackson: 2ms
 ### Nice big configuration JSON
 
 ```
-	8852
+Number of characters in string: 8852
 json-parse: 13ms
 jackson: 236ms
 
-	5615
+Number of characters in string: 5615
 json-parse: 2ms
 jackson: 5ms
 
-	13794
+Number of characters in string: 13794
 json-parse: 5ms
 jackson: 6ms
 
-	83458
+Number of characters in string: 83458
 json-parse: 22ms
 jackson: 11ms
 
-	129075
+Number of characters in string: 129075
 json-parse: 12ms
 jackson: 7ms
 
-	87255
+Number of characters in string: 87255
 json-parse: 13ms
 jackson: 4ms
 ```
