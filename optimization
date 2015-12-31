@@ -1,5 +1,4 @@
 * Lookahead for maps and lists, determining initial size in advance
 * Keep the current object in the stack, just in case, rather than thrashing it back and forth (when lots of nested objs)
 * Don't strip and reassign string, just pass full object to parse()
-* Smarter read-ahead. Say, if we're dealing with a string, jump `i` forward until we hit the other '"'
 * When reading boolean/null, determine what it is at property-completion-time, rather than sorting out the Type in advance
