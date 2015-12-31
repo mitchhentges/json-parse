@@ -1,6 +1,6 @@
 # Json Parse
 
-A tool to quickly parse JSON into Java maps and lists. Goes in a pass, so should be `O(n)`.
+A tool to quickly parse JSON into Java maps and lists. Goes in a single pass, so should be `O(n)`.
 However, FasterXML's `jackson` still kicks it around. If a heavyweight library needs to be avoided, then this
 is a good solution
 
