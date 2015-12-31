@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -115,6 +116,20 @@ public class JsonParseTest {
                 .add("obj", MapBuilder.init().add("swag", true).build())
                 .build();
         Assert.assertEquals(expected, jsonParse.map(test));
+    }
+
+    @Test
+    public void shouldParseNestedList() {
+        String test = "{\"outer\":{\"array\":[\"inner1\",\"inner2\"], \"ayy\":\"lmao\"}}";
+        Map<String, Object> expected = MapBuilder.init()
+                .add("outer", MapBuilder.init().add("array", Arrays.asList("inner1", "inner2")).add("ayy", "lmao").build())
+                .build();
+        Assert.assertEquals(expected, jsonParse.map(test));
+    }
+
+    @Test
+    public void shouldParseNestedNests() {
+
     }
 
     static class MapBuilder {
