@@ -7,7 +7,6 @@ import java.util.*;
 * @since 30/12/15
 */
 public class JsonParse {
-    private static final String TRUE = "true";
     private static final String FALSE = "false";
     private static final String NULL = "null";
 
