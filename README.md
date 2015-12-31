@@ -98,4 +98,4 @@ I was going for 100% speed and 5% maintainability. It's small, so the maintainab
 the bugs are worked out, then (ideally) nobody will ever have to touch the code again #pipedreams.
 
 ## License
-[MIT License (Expat)](https://www.tldrlegal.com/l/mit)
+[MIT License (Expat)](http://www.opensource.org/licenses/mit-license.php)
