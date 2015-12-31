@@ -91,3 +91,8 @@ parsing was done with Android's `JSONObject`, forcing dependent code to transiti
 
 I figured "hey, Jackson's cool and all, but it's so _big_. Why not make my own JSON parser"? This is the culmination
 of my efforts, and it's quite effective.
+
+## ... Why is the code so messy?
+
+I was going for 100% speed and 5% maintainability. It's small, so the maintainability hit won't be too bad, and once
+the bugs are worked out, then (ideally) nobody will ever have to touch the code again #pipedreams.
