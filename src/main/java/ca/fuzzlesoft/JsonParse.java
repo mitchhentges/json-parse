@@ -16,16 +16,16 @@ public class JsonParse {
     private Stack<Object> containerStack;
     private Object currentContainer;
     private Type currentType;
+    private String jsonString;
 
-    private boolean escaping = false;
     private boolean expectingComma = false;
     private boolean expectingColon = false;
-    private int symbolOffset = 0;
+    private int fieldStart = 0;
+    private int i = 0;
 
     private boolean matchesTrue = true;
     private boolean matchesFalse = true;
     private String propertyName = "";
-    private String propertyValue = "";
 
     public Map<String, Object> map(String jsonString) {
         jsonString = ContainingStrip.OBJECT.strip(jsonString);
@@ -38,6 +38,7 @@ public class JsonParse {
     }
 
     private Object parse(String jsonString, Type type) {
+        this.jsonString = jsonString;
         propertyNameStack = new Stack<>();
         containerStack = new Stack<>();
         typeStack = new Stack<>();
@@ -51,33 +52,35 @@ public class JsonParse {
         }
 
         char current;
-        for (int i = 0; i < jsonString.length(); i++) {
+        for (i = 0; i < jsonString.length(); i++) {
             current = jsonString.charAt(i);
 
             if (currentType == Type.NAME) {
                 if (current == '"') {
+                    if (i - 1 >= 0 && jsonString.charAt(i - 1) == '\\') {
+                        continue; //This quotation is escaped
+                    }
+
+                    propertyName = jsonString.substring(fieldStart, i);
                     typeStack.pop();
                     typeStack.push(Type.HEURISTIC);
                     currentType = Type.HEURISTIC;
                     expectingColon = true;
-                } else {
-                    propertyName += current;
                 }
 
                 continue;
             }
 
             if (currentType == Type.STRING) {
-                if (current == '"' && !escaping) {
-                    put(propertyValue);
+                if (current == '"') {
+                    if (i - 1 >= 0 && jsonString.charAt(i - 1) == '\\') {
+                        continue; //This quotation is escaped
+                    }
+
+                    put(jsonString.substring(fieldStart, i));
                     expectingComma = true;
                     typeStack.pop();
                     currentType = typeStack.peek();
-                } else if (current == '\\') {
-                    if (!escaping) escaping = true;
-                    propertyValue += current;
-                } else {
-                    propertyValue += current;
                 }
 
                 continue;
@@ -127,26 +130,24 @@ public class JsonParse {
                     typeStack.pop();
                     typeStack.push(Type.NUMBER);
                     currentType = Type.NUMBER;
-                    propertyValue = String.valueOf(current);
+                    fieldStart = i;
                 } else if (current == '"') {
                     typeStack.pop();
                     typeStack.push(Type.STRING);
                     currentType = Type.STRING;
-                    propertyValue = ""; // Don't start with `current`, as it is delimiter: '"'
+                    fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
                 } else if (current == 't' || current == 'f') {
                     typeStack.pop();
                     typeStack.push(Type.BOOLEAN);
                     currentType = Type.BOOLEAN;
-                    propertyValue = String.valueOf(current);
-                    symbolOffset = 1; // Already read first character of symbol, next character will be offset 1
+                    fieldStart = i;
                     matchesTrue = true;
                     matchesFalse = true;
                 } else if (current == 'n') {
                     typeStack.pop();
                     typeStack.push(Type.NULL);
                     currentType = Type.NULL;
-                    propertyValue = String.valueOf(current);
-                    symbolOffset = 1; // Already read first character of symbol, next character will be offset 1
+                    fieldStart = i;
                 } else if (current == '{') {
                     typeStack.pop();
                     typeStack.push(Type.OBJECT);
@@ -172,23 +173,21 @@ public class JsonParse {
                 if (Constants.is(Constants.NUMBERS, current)) {
                     typeStack.push(Type.NUMBER);
                     currentType = Type.NUMBER;
-                    propertyValue = String.valueOf(current);
+                    fieldStart = i;
                 } else if (current == '"') {
                     typeStack.push(Type.STRING);
                     currentType = Type.STRING;
-                    propertyValue = ""; // Don't start with `current`, as it is delimiter: '"'
+                    fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
                 } else if (current == 't' || current == 'f') {
                     typeStack.push(Type.BOOLEAN);
                     currentType = Type.BOOLEAN;
-                    propertyValue = String.valueOf(current);
-                    symbolOffset = 1; // Already read first character of symbol, next character will be offset 1
+                    fieldStart = i;
                     matchesTrue = true;
                     matchesFalse = true;
                 } else if (current == 'n') {
                     typeStack.push(Type.NULL);
                     currentType = Type.NULL;
-                    propertyValue = String.valueOf(current);
-                    symbolOffset = 1; // Already read first character of symbol, next character will be offset 1
+                    fieldStart = i;
                 } else if (current == '{') {
                     typeStack.push(Type.OBJECT);
                     currentType = Type.OBJECT;
@@ -210,47 +209,18 @@ public class JsonParse {
                 if (current == '"') {
                     typeStack.push(Type.NAME);
                     currentType = Type.NAME;
-                    propertyName = "";
+                    fieldStart = i + 1; // Don't start with `current`, as it is the beginning quotation
                     continue;
                 }
 
                 throw new JsonParseException("Object contained unexpected character");
             }
 
-            if (currentType == Type.NUMBER) {
-                if (!Constants.is(Constants.NUMBERS, current)) {
-                    throw new JsonParseException("Unexpected character in number property value");
-                }
+            if (currentType == Type.NUMBER) continue;
 
-                propertyValue += current;
-                continue;
-            }
+            if (currentType == Type.BOOLEAN) continue;
 
-            if (currentType == Type.BOOLEAN) {
-                if (matchesTrue && (symbolOffset >= TRUE.length() || current != TRUE.charAt(symbolOffset))) {
-                    matchesTrue = false;
-                }
-                if (matchesFalse && (symbolOffset >= FALSE.length() || current != FALSE.charAt(symbolOffset))) {
-                    matchesFalse = false;
-                }
-
-                if (!matchesTrue && !matchesFalse) {
-                    throw new JsonParseException("Unexpected property value: " + propertyValue);
-                }
-
-                propertyValue += current;
-                symbolOffset++;
-                continue;
-            }
-
-            if (currentType == Type.NULL) {
-                if (symbolOffset >= NULL.length() || current != NULL.charAt(symbolOffset)) {
-                    throw new JsonParseException("Unexpected property value: " + propertyValue);
-                }
-
-                propertyValue += current;
-                symbolOffset++;
-            }
+            if (currentType == Type.NULL) continue;
         }
 
         checkValueTermination();
@@ -263,21 +233,31 @@ public class JsonParse {
      * @return true if section termination just occurred
      */
     private boolean checkValueTermination() {
+        String substring = jsonString.substring(fieldStart, i);
         if (currentType == Type.NUMBER) {
             try {
-                put(Long.valueOf(propertyValue));
+                put(Long.valueOf(substring));
             } catch (NumberFormatException e) {
                 //Perhaps the number is a decimal
                 try {
-                    put(Double.valueOf(propertyValue));
+                    put(Double.valueOf(substring));
                 } catch (NumberFormatException f) {
                     //Nope, not a decimal, invalid number
-                    throw new JsonParseException("Can't parse number for property: " + propertyName);
+                    throw new JsonParseException("Can't parse number for: " + propertyName);
                 }
             }
         } else if (currentType == Type.BOOLEAN) {
-            put(Boolean.valueOf(propertyValue));
+            boolean value = Boolean.valueOf(substring);
+
+            //If boolean isn't parsable, will get "false"
+            if (!value && !substring.equals(FALSE)) {
+                throw new JsonParseException(propertyName + "| Unable to parse value. Perhaps it needs quotes?");
+            }
+            put(Boolean.valueOf(substring));
         } else if (currentType == Type.NULL) {
+            if (!substring.equals(NULL)) {
+                throw new JsonParseException(propertyName + "| Unable to parse value. Perhaps it needs quotes?");
+            }
             put(null);
         } else {
             return false;
