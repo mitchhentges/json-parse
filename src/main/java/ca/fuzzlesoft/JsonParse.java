@@ -17,6 +17,7 @@ public class JsonParse {
     private Object currentContainer;
     private Type currentType;
 
+    private boolean escaping = false;
     private boolean expectingComma = false;
     private boolean expectingColon = false;
     private int symbolOffset = 0;
@@ -67,11 +68,14 @@ public class JsonParse {
             }
 
             if (currentType == Type.STRING) {
-                if (current == '"') {
+                if (current == '"' && !escaping) {
                     put(propertyValue);
                     expectingComma = true;
                     typeStack.pop();
                     currentType = typeStack.peek();
+                } else if (current == '\\') {
+                    if (!escaping) escaping = true;
+                    propertyValue += current;
                 } else {
                     propertyValue += current;
                 }
@@ -106,7 +110,7 @@ public class JsonParse {
                 currentType = typeStack.peek();
                 continue;
             } else if (expectingComma) {
-                throw new JsonParseException("Properties weren't divided by commas");
+                throw new JsonParseException("Properties weren't divided by commas: " + jsonString.substring(i - 20, i + 20));
             }
 
             if (expectingColon) {
@@ -283,9 +287,9 @@ public class JsonParse {
 
     private void put(Object value) {
         if (currentContainer instanceof Map) {
-            ((Map<String, Object>)currentContainer).put(propertyName, value);
+            ((Map<String, Object>) currentContainer).put(propertyName, value);
         } else {
-            ((List<Object>)currentContainer).add(value);
+            ((List<Object>) currentContainer).add(value);
         }
     }
 
@@ -293,9 +297,9 @@ public class JsonParse {
         if (checkValueTermination()) typeStack.pop();
         Object upperContainer = containerStack.pop();
         if (upperContainer instanceof Map) {
-            ((Map<String, Object>)upperContainer).put(propertyNameStack.pop(), currentContainer);
+            ((Map<String, Object>) upperContainer).put(propertyNameStack.pop(), currentContainer);
         } else {
-            ((List<Object>)upperContainer).add(currentContainer);
+            ((List<Object>) upperContainer).add(currentContainer);
         }
         currentContainer = upperContainer;
         expectingComma = true;
