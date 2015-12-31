@@ -2,10 +2,12 @@ package ca.fuzzlesoft;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -119,17 +121,31 @@ public class JsonParseTest {
     }
 
     @Test
-    public void shouldParseNestedList() {
-        String test = "{\"outer\":{\"array\":[\"inner1\",\"inner2\"], \"ayy\":\"lmao\"}}";
+    public void shouldAllowSpecialCharactersInStrings() {
+        String test = "{\"foo\":\"{}[]'1234\"}";
         Map<String, Object> expected = MapBuilder.init()
-                .add("outer", MapBuilder.init().add("array", Arrays.asList("inner1", "inner2")).add("ayy", "lmao").build())
+                .add("foo", "{}[]'1234")
                 .build();
         Assert.assertEquals(expected, jsonParse.map(test));
     }
 
     @Test
-    public void shouldParseNestedNests() {
+    public void shouldParseList() {
+        String test = "[1, \"foo\", true]";
+        List<Object> list = Arrays.<Object>asList(1L, "foo", true);
+        Assert.assertEquals(jsonParse.list(test), list);
+    }
 
+    @Test
+    public void shouldParseNestedNests() {
+        String test = "{\"outer\":{\"array\":[\"inner1\",\"inner2\", [1,2,3]], \"ayy\":\"lmao\"}}";
+        Map<String, Object> expected = MapBuilder.init()
+                .add("outer", MapBuilder.init()
+                        .add("array", Arrays.asList("inner1", "inner2", Arrays.asList(1L, 2L, 3L)))
+                        .add("ayy", "lmao").build()
+                )
+                .build();
+        Assert.assertEquals(expected, jsonParse.map(test));
     }
 
     static class MapBuilder {

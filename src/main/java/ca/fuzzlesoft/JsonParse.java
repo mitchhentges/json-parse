@@ -13,8 +13,8 @@ public class JsonParse {
 
     private Stack<String> propertyNameStack;
     private Stack<Type> typeStack;
-    private Stack<Map<String, Object>> mapStack;
-    private Map<String, Object> currentMap;
+    private Stack<Object> containerStack;
+    private Object currentContainer;
     private Type currentType;
 
     private boolean expectingComma = false;
@@ -27,24 +27,29 @@ public class JsonParse {
     private String propertyValue = "";
 
     public Map<String, Object> map(String jsonString) {
-        String inner = ContainingStrip.OBJECT.strip(jsonString);
-        return internalMap(inner);
+        jsonString = ContainingStrip.OBJECT.strip(jsonString);
+        return (Map<String, Object>) parse(jsonString, Type.OBJECT);
     }
 
     public List<Object> list(String jsonString) {
-        return new ArrayList<>();
+        jsonString = ContainingStrip.ARRAY.strip(jsonString);
+        return (List<Object>) parse(jsonString, Type.ARRAY);
     }
 
-    private Map<String, Object> internalMap(String jsonString) {
+    private Object parse(String jsonString, Type type) {
         propertyNameStack = new Stack<>();
-        mapStack = new Stack<>();
-        currentMap = new HashMap<>();
+        containerStack = new Stack<>();
         typeStack = new Stack<>();
-        typeStack.push(Type.OBJECT);
-        currentType = Type.OBJECT;
+        typeStack.push(type);
+        currentType = type;
+
+        if (type == Type.OBJECT) {
+            currentContainer = new HashMap<>();
+        } else {
+            currentContainer = new ArrayList<>();
+        }
 
         char current;
-
         for (int i = 0; i < jsonString.length(); i++) {
             current = jsonString.charAt(i);
 
@@ -63,7 +68,7 @@ public class JsonParse {
 
             if (currentType == Type.STRING) {
                 if (current == '"') {
-                    currentMap.put(propertyName, propertyValue);
+                    put(propertyValue);
                     expectingComma = true;
                     typeStack.pop();
                     currentType = typeStack.peek();
@@ -75,25 +80,7 @@ public class JsonParse {
             }
 
             if (Constants.is(Constants.WHITE, current)) {
-                if (currentType == Type.NUMBER) {
-                    try {
-                        currentMap.put(propertyName, Long.valueOf(propertyValue));
-                    } catch (NumberFormatException e) {
-                        //Perhaps the number is a decimal
-                        try {
-                            currentMap.put(propertyName, Double.valueOf(propertyValue));
-                        } catch (NumberFormatException f) {
-                            //Nope, not a decimal, invalid number
-                            throw new JsonParseException("Can't parse number for property: " + propertyName);
-                        }
-                    }
-                } else if (currentType == Type.BOOLEAN) {
-                    currentMap.put(propertyName, Boolean.valueOf(propertyValue));
-                } else if (currentType == Type.NULL) {
-                    currentMap.put(propertyName, null);
-                } else {
-                    continue;
-                }
+                if (!checkValueTermination()) continue;
 
                 expectingComma = true;
                 typeStack.pop();
@@ -102,53 +89,18 @@ public class JsonParse {
             }
 
             if (current == '}') {
-                if (currentType == Type.NUMBER) {
-                    try {
-                        currentMap.put(propertyName, Long.valueOf(propertyValue));
-                    } catch (NumberFormatException e) {
-                        //Perhaps the number is a decimal
-                        try {
-                            currentMap.put(propertyName, Double.valueOf(propertyValue));
-                        } catch (NumberFormatException f) {
-                            //Nope, not a decimal, invalid number
-                            throw new JsonParseException("Can't parse number for property: " + propertyName);
-                        }
-                    }
-                } else if (currentType == Type.BOOLEAN) {
-                    currentMap.put(propertyName, Boolean.valueOf(propertyValue));
-                } else if (currentType == Type.NULL) {
-                    currentMap.put(propertyName, null);
-                }
+                endContainer();
+                continue;
+            }
 
-                mapStack.peek().put(propertyNameStack.pop(), currentMap);
-                currentMap = mapStack.pop();
-                expectingComma = true;
-                typeStack.pop();
-                currentType = typeStack.peek();
+            if (current == ']') {
+                endContainer();
                 continue;
             }
 
             if (current == ',') {
                 expectingComma = false;
-                if (currentType == Type.NUMBER) {
-                    try {
-                        currentMap.put(propertyName, Long.valueOf(propertyValue));
-                    } catch (NumberFormatException e) {
-                        //Perhaps the number is a decimal
-                        try {
-                            currentMap.put(propertyName, Double.valueOf(propertyValue));
-                        } catch (NumberFormatException f) {
-                            //Nope, not a decimal, invalid number
-                            throw new JsonParseException("Can't parse number for property: " + propertyName);
-                        }
-                    }
-                } else if (currentType == Type.BOOLEAN) {
-                    currentMap.put(propertyName, Boolean.valueOf(propertyValue));
-                } else if (currentType == Type.NULL) {
-                    currentMap.put(propertyName, null);
-                } else {
-                    continue;
-                }
+                if (!checkValueTermination()) continue;
 
                 typeStack.pop();
                 currentType = typeStack.peek();
@@ -167,7 +119,6 @@ public class JsonParse {
             }
 
             if (currentType == Type.HEURISTIC) {
-                //object, list, string, number, boolean, null
                 if (Constants.is(Constants.NUMBERS, current)) {
                     typeStack.pop();
                     typeStack.push(Type.NUMBER);
@@ -177,7 +128,7 @@ public class JsonParse {
                     typeStack.pop();
                     typeStack.push(Type.STRING);
                     currentType = Type.STRING;
-                    propertyValue = ""; // Don't use `current`, as it is delimiter: '"'
+                    propertyValue = ""; // Don't start with `current`, as it is delimiter: '"'
                 } else if (current == 't' || current == 'f') {
                     typeStack.pop();
                     typeStack.push(Type.BOOLEAN);
@@ -197,10 +148,55 @@ public class JsonParse {
                     typeStack.push(Type.OBJECT);
                     currentType = Type.OBJECT;
                     propertyNameStack.push(propertyName);
-                    mapStack.push(currentMap);
-                    currentMap = new HashMap<>();
+                    containerStack.push(currentContainer);
+                    currentContainer = new HashMap<>();
+                } else if (current == '[') {
+                    typeStack.pop();
+                    typeStack.push(Type.ARRAY);
+                    currentType = Type.ARRAY;
+                    propertyNameStack.push(propertyName);
+                    containerStack.push(currentContainer);
+                    currentContainer = new ArrayList<>();
                 } else {
-                    throw new JsonParseException("Property value was not of known type");
+                    throw new JsonParseException("Object property's value could not be parsed");
+                }
+
+                continue;
+            }
+
+            if (currentType == Type.ARRAY) {
+                if (Constants.is(Constants.NUMBERS, current)) {
+                    typeStack.push(Type.NUMBER);
+                    currentType = Type.NUMBER;
+                    propertyValue = String.valueOf(current);
+                } else if (current == '"') {
+                    typeStack.push(Type.STRING);
+                    currentType = Type.STRING;
+                    propertyValue = ""; // Don't start with `current`, as it is delimiter: '"'
+                } else if (current == 't' || current == 'f') {
+                    typeStack.push(Type.BOOLEAN);
+                    currentType = Type.BOOLEAN;
+                    propertyValue = String.valueOf(current);
+                    symbolOffset = 1; // Already read first character of symbol, next character will be offset 1
+                    matchesTrue = true;
+                    matchesFalse = true;
+                } else if (current == 'n') {
+                    typeStack.push(Type.NULL);
+                    currentType = Type.NULL;
+                    propertyValue = String.valueOf(current);
+                    symbolOffset = 1; // Already read first character of symbol, next character will be offset 1
+                } else if (current == '{') {
+                    typeStack.push(Type.OBJECT);
+                    currentType = Type.OBJECT;
+                    containerStack.push(currentContainer);
+                    currentContainer = new HashMap<>();
+                } else if (current == '[') {
+                    typeStack.push(Type.ARRAY);
+                    currentType = Type.ARRAY;
+                    containerStack.push(currentContainer);
+                    currentContainer = new ArrayList<>();
+                } else {
+                    throw new JsonParseException("Object property's value could not be parsed");
                 }
 
                 continue;
@@ -211,17 +207,10 @@ public class JsonParse {
                     typeStack.push(Type.NAME);
                     currentType = Type.NAME;
                     propertyName = "";
-                } else if (current == '}') {
-                    mapStack.peek().put(propertyNameStack.pop(), currentMap);
-                    currentMap = mapStack.pop();
-                    expectingComma = true;
-                    typeStack.pop();
-                    currentType = typeStack.peek();
-                } else {
-                    throw new JsonParseException("Object contained unexpected character");
+                    continue;
                 }
 
-                continue;
+                throw new JsonParseException("Object contained unexpected character");
             }
 
             if (currentType == Type.NUMBER) {
@@ -257,28 +246,61 @@ public class JsonParse {
 
                 propertyValue += current;
                 symbolOffset++;
-                continue;
             }
         }
 
+        checkValueTermination();
+        return currentContainer;
+    }
+
+    /**
+     * Handles the potential completion of a "section", returning true if a section was just completed (e.g. this is
+     * called on the space after a number, completing the number)
+     * @return true if section termination just occurred
+     */
+    private boolean checkValueTermination() {
         if (currentType == Type.NUMBER) {
             try {
-                currentMap.put(propertyName, Long.valueOf(propertyValue));
+                put(Long.valueOf(propertyValue));
             } catch (NumberFormatException e) {
                 //Perhaps the number is a decimal
                 try {
-                    currentMap.put(propertyName, Double.valueOf(propertyValue));
+                    put(Double.valueOf(propertyValue));
                 } catch (NumberFormatException f) {
                     //Nope, not a decimal, invalid number
                     throw new JsonParseException("Can't parse number for property: " + propertyName);
                 }
             }
         } else if (currentType == Type.BOOLEAN) {
-            currentMap.put(propertyName, Boolean.valueOf(propertyValue));
+            put(Boolean.valueOf(propertyValue));
         } else if (currentType == Type.NULL) {
-            currentMap.put(propertyName, null);
+            put(null);
+        } else {
+            return false;
         }
-        return currentMap;
+        return true;
+    }
+
+    private void put(Object value) {
+        if (currentContainer instanceof Map) {
+            ((Map<String, Object>)currentContainer).put(propertyName, value);
+        } else {
+            ((List<Object>)currentContainer).add(value);
+        }
+    }
+
+    private void endContainer() {
+        if (checkValueTermination()) typeStack.pop();
+        Object upperContainer = containerStack.pop();
+        if (upperContainer instanceof Map) {
+            ((Map<String, Object>)upperContainer).put(propertyNameStack.pop(), currentContainer);
+        } else {
+            ((List<Object>)upperContainer).add(currentContainer);
+        }
+        currentContainer = upperContainer;
+        expectingComma = true;
+        typeStack.pop();
+        currentType = typeStack.peek();
     }
 
     enum Type {
