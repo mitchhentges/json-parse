@@ -183,16 +183,9 @@ public class JsonParseTest {
     public void shouldOnlyThrowJsonParseExceptionOnTooManyClosingTags() {
         try {
             jsonParse.map("{}}");
-            jsonParse.list("[]]");
         } catch (JsonParseException ignored) {}
-    }
-
-    @Ignore //TODO
-    @Test
-    public void shouldThrowExceptionOnAlternatingClosingTags() {
         try {
-            jsonParse.map("{\"a\":[{]}}");
-            Assert.fail("Shouldn't consider closing tags equal");
+            jsonParse.list("[]]");
         } catch (JsonParseException ignored) {}
     }
 
