@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import ca.fuzzlesoft.JsonParse.Type;
+
 /**
  * @author mitch
  * @since 30/12/15
@@ -174,6 +176,34 @@ public class JsonParseTest {
         String test = "\t\n{\t}\n\t";
         Map<String, Object> expected = new HashMap<>();
         Assert.assertEquals(expected, jsonParse.map(test));
+    }
+
+    @Test
+    public void shouldFormatExceptionsWithJsonStack() {
+        assertFormatting("{\"a\":{\"b\":{\"c\": fasle}}}", "a.b.c: \"fasle\" is an invalid value");
+        assertFormatting("{\"a\":true \"b\":false}", "a: wasn't followed by a comma");
+        assertFormatting("{\"a\" true}", "a: \"a\" wasn't followed by a colon");
+        assertFormatting("{\"a\": true, v}", "<root>: unexpected character 'v' where a property name is expected");
+        assertFormatting("{\"a\": v}", "a: value could not be parsed");
+    }
+
+    @Test
+    public void shouldUseSquareBracketsForFormattingErrorsInArrays() {
+        assertFormatting(Type.ARRAY, "[true, false false]", "[]: wasn't followed by a comma");
+        assertFormatting(Type.ARRAY, "[v]", "[]: value could not be parsed");
+        assertFormatting("{\"a\": [{v}]", "a.[]: unexpected character 'v' where a property name is expected");
+    }
+
+    private void assertFormatting(String test, String expected) {
+        assertFormatting(Type.OBJECT, test, expected);
+    }
+
+    private void assertFormatting(Type type, String test, String expected) {
+        try {
+            JsonParse.parse(test, type);
+        } catch (JsonParseException e) {
+            Assert.assertEquals(expected, e.getMessage());
+        }
     }
 
     static class MapBuilder {

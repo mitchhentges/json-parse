@@ -25,21 +25,23 @@ public class JsonParse {
 
         boolean expectingComma = false, expectingColon = false;
         int fieldStart = 0, offset, endOffset;
-        String propertyName = "";
+        String propertyName;
 
         Object currentContainer;
         if (type == Type.OBJECT) {
             offset = jsonString.indexOf('{');
             endOffset = jsonString.lastIndexOf('}');
             currentContainer = new HashMap<>();
+            propertyName = ""; // Will be set whenever property name is entered
         } else {
             offset = jsonString.indexOf('[');
             endOffset = jsonString.lastIndexOf(']');
             currentContainer = new ArrayList<>();
+            propertyName = "[]";
         }
 
         if (offset == -1 || endOffset == -1) {
-            throw new JsonParseException("Json string didn't contain " + type);
+            throw new JsonParseException("Json string didn't contain an " + type);
         }
 
         char current;
@@ -84,10 +86,11 @@ public class JsonParse {
             }
 
             if (current == '}' || current == ']') {
-                if (checkValueTermination(currentContainer, jsonString, fieldStart, i, currentType, propertyName)) typeStack.pop();
+                if (checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName)) typeStack.pop();
                 Object upperContainer = containerStack.pop();
+                String parentName = propertyNameStack.pop();
                 if (upperContainer instanceof Map) {
-                    ((Map<String, Object>) upperContainer).put(propertyNameStack.pop(), currentContainer);
+                    ((Map<String, Object>) upperContainer).put(parentName, currentContainer);
                 } else {
                     ((List<Object>) upperContainer).add(currentContainer);
                 }
@@ -99,7 +102,7 @@ public class JsonParse {
             }
 
             if (Constants.is(Constants.WHITE, current)) {
-                if (!checkValueTermination(currentContainer, jsonString, fieldStart, i, currentType, propertyName)) continue;
+                if (!checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName)) continue;
 
                 expectingComma = true;
                 typeStack.pop();
@@ -109,13 +112,14 @@ public class JsonParse {
 
             if (current == ',') {
                 expectingComma = false;
-                if (!checkValueTermination(currentContainer, jsonString, fieldStart, i, currentType, propertyName)) continue;
+                if (!checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName)) continue;
 
                 typeStack.pop();
                 currentType = typeStack.peek();
                 continue;
             } else if (expectingComma) {
-                throw new JsonParseException("Properties weren't divided by commas: " + jsonString.substring(i - 20, i + 20));
+                propertyNameStack.push(propertyName);
+                throw new JsonParseException(propertyNameStack, "wasn't followed by a comma");
             }
 
             if (expectingColon) {
@@ -124,7 +128,8 @@ public class JsonParse {
                     continue;
                 }
 
-                throw new JsonParseException("Expecting colon");
+                propertyNameStack.push(propertyName);
+                throw new JsonParseException(propertyNameStack, "\"" + propertyName + "\" wasn't followed by a colon");
             }
 
             if (currentType == Type.HEURISTIC) {
@@ -162,8 +167,10 @@ public class JsonParse {
                     propertyNameStack.push(propertyName);
                     containerStack.push(currentContainer);
                     currentContainer = new ArrayList<>();
+                    propertyName = "[]";
                 } else {
-                    throw new JsonParseException("Object property's value could not be parsed");
+                    propertyNameStack.push(propertyName);
+                    throw new JsonParseException(propertyNameStack, "value could not be parsed");
                 }
 
                 continue;
@@ -189,15 +196,18 @@ public class JsonParse {
                 } else if (current == '{') {
                     typeStack.push(Type.OBJECT);
                     currentType = Type.OBJECT;
+                    propertyNameStack.push(propertyName);
                     containerStack.push(currentContainer);
                     currentContainer = new HashMap<>();
                 } else if (current == '[') {
                     typeStack.push(Type.ARRAY);
                     currentType = Type.ARRAY;
+                    propertyNameStack.push(propertyName);
                     containerStack.push(currentContainer);
                     currentContainer = new ArrayList<>();
                 } else {
-                    throw new JsonParseException("Object property's value could not be parsed");
+                    propertyNameStack.push(propertyName);
+                    throw new JsonParseException(propertyNameStack, "value could not be parsed");
                 }
 
                 continue;
@@ -211,11 +221,12 @@ public class JsonParse {
                     continue;
                 }
 
-                throw new JsonParseException("Object contained unexpected character");
+                throw new JsonParseException(propertyNameStack,
+                        "unexpected character '" + current + "' where a property name is expected");
             }
         }
 
-        checkValueTermination(currentContainer, jsonString, fieldStart, i, currentType, propertyName);
+        checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName);
         return currentContainer;
     }
 
@@ -224,32 +235,35 @@ public class JsonParse {
      * called on the space after a number, completing the number)
      * @return true if section termination just occurred
      */
-    private static boolean checkValueTermination(Object currentContainer, String jsonString, int fieldStart, int fieldEnd, Type currentType, String propertyName) {
-        String substring = jsonString.substring(fieldStart, fieldEnd);
+    private static boolean checkValueTermination(Stack<String> propertyNameStack, Object currentContainer, String jsonString, int fieldStart, int fieldEnd, Type currentType, String propertyName) {
+        String valueString = jsonString.substring(fieldStart, fieldEnd);
         Object value = null;
         if (currentType == Type.NUMBER) {
             try {
-                value = Long.valueOf(substring);
+                value = Long.valueOf(valueString);
             } catch (NumberFormatException e) {
                 //Perhaps the number is a decimal
                 try {
-                    value = Double.valueOf(substring);
+                    value = Double.valueOf(valueString);
                 } catch (NumberFormatException f) {
                     //Nope, not a decimal, invalid number
-                    throw new JsonParseException("Can't parse number for: " + propertyName);
+                    propertyNameStack.push(propertyName);
+                    throw new JsonParseException(propertyNameStack, "\"" + valueString + "\" is an invalid value");
                 }
             }
         } else if (currentType == Type.BOOLEAN) {
-            boolean bool = Boolean.valueOf(substring);
+            boolean bool = Boolean.valueOf(valueString);
 
             //If boolean isn't parsable, will get "false"
-            if (!bool && !substring.equals("false")) {
-                throw new JsonParseException(propertyName + "| Unable to parse value. Perhaps it needs quotes?");
+            if (!bool && !valueString.equals("false")) {
+                propertyNameStack.push(propertyName);
+                throw new JsonParseException(propertyNameStack, "\"" + valueString + "\" is an invalid value");
             }
             value = bool;
         } else if (currentType == Type.NULL) {
-            if (!substring.equals("null")) {
-                throw new JsonParseException(propertyName + "| Unable to parse value. Perhaps it needs quotes?");
+            if (!valueString.equals("null")) {
+                propertyNameStack.push(propertyName);
+                throw new JsonParseException(propertyNameStack, "\"" + valueString + "\" is an invalid value");
             }
             //toPut is null by default
         } else {
