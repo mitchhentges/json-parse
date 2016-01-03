@@ -1,101 +1,37 @@
 # Json Parse [![Build Status](https://travis-ci.org/mitchhentges/json-parse.svg?branch=master)](https://travis-ci.org/mitchhentges/json-parse)
 
-A tool to quickly parse JSON into Java maps and lists. Goes in a single pass, so should be `O(n)`.
-Competes very well with FasterXML's Jackson.
+A tool to quickly parse JSON into Java maps and lists. Competes well with FasterXML's Jackson with an extremely
+small memory footprint
 
-## Comparison to Jackson (on my machine)
-
-Testing with Jackson's `ObjectMapper` showed a solid 200ms startup time. Following that, every parse takes at
-least 2ms. Fortunately, when dealing with large amounts of JSON (e.g. 4000 nicely formatted lines), Jackson only
-takes a few dozen milliseconds.
-
-Json Parse initializes in less that 5ms, then speedily works along. It can usually take under half the time as Jackson
-on parsing any JSON under 1000 (nicely formatted) lines long. As the number of lines increases, Jackson makes back
-lost time and eventually wins.
-
-### Small, bite-sized json
-
-I benchmarked Jackson vs. Json Parse with a few event-like pieces of JSON.
+## Usage
 
 ```
-Number of characters in string: 132
-json-parse: 3ms
-jackson: 263ms
+String mapString = "{\"fast\":true, \"super-neat\":true}";
+String listString = "[1, 2, false]";
 
-Number of characters in string: 6746
-json-parse: 2ms
-jackson: 3ms
-
-Number of characters in string: 6746
-json-parse: 1ms
-jackson: 2ms
-
-Number of characters in string: 254
-json-parse: 0ms
-jackson: 2ms
-
-Number of characters in string: 153
-json-parse: 0ms
-jackson: 2ms
-
-Number of characters in string: 270
-json-parse: 0ms
-jackson: 2ms
-
-Number of characters in string: 238
-json-parse: 0ms
-jackson: 2ms
-
-Number of characters in string: 180
-json-parse: 1ms
-jackson: 2ms
-
-Number of characters in string: 172
-json-parse: 0ms
-jackson: 2ms
+JsonParse parse = new JsonParse();
+Map<String, Object> map = parse.map(mapString);
+List<Object> list = parse.list(listString);
 ```
 
-### Nice big configuration JSON
+## Features
 
-```
-Number of characters in string: 8852
-json-parse: 13ms
-jackson: 236ms
+* Convert a JSON string to a Java `List<Object>`
+* Convert a JSON string to a Java `Map<String, Object>`
+* Thread safe
+* Throw exceptions with helpful messages with trace to error, e.g. 'a.b.c: "fasle" is an invalid value'
 
-Number of characters in string: 5615
-json-parse: 2ms
-jackson: 5ms
+## FAQ
 
-Number of characters in string: 13794
-json-parse: 5ms
-jackson: 6ms
+* Can this convert from JSON directly to `SomeObject`?
 
-Number of characters in string: 83458
-json-parse: 22ms
-jackson: 11ms
+Unfortunately not. JSON doesn't have any type information, so explicit knowledge is required before JSON can be
+converted. This is the job of a "binding framework"
 
-Number of characters in string: 129075
-json-parse: 12ms
-jackson: 7ms
+* Why do my JSON traces show "[]" for array elements, rather than their index?
 
-Number of characters in string: 87255
-json-parse: 13ms
-jackson: 4ms
-```
-
-## ... Why?
-
-Currently, I've got a project that communicates to the server with JSON. It's an Android app, but I'd prefer to keep
-as much of the code as Android-free as possible, so it can be run with pure-Java with but a few tweaks. Sadly, JSON
-parsing was done with Android's `JSONObject`, forcing dependent code to transitively depend on Android.
-
-I figured "hey, Jackson's cool and all, but it's so _big_. Why not make my own JSON parser"? This is the culmination
-of my efforts, and it's quite effective.
-
-## ... Why is the code so messy?
-
-I was going for 100% speed and 5% maintainability. It's small, so the maintainability hit won't be too bad, and once
-the bugs are worked out, then (ideally) nobody will ever have to touch the code again #pipedreams.
+Since efficiency is a primary goal of this project, array indices could not be added to JSON traces. It would
+cost some performance, and that's not worth it ;)
 
 ## License
 [MIT License (Expat)](http://www.opensource.org/licenses/mit-license.php)

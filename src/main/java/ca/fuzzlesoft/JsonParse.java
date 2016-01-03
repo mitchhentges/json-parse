@@ -3,19 +3,38 @@ package ca.fuzzlesoft;
 import java.util.*;
 
 /**
-* @author mitch
-* @since 30/12/15
-*/
+ * Parses JSON, converting it into {@link List}s and {@link Map}s. Is thread safe.
+ *
+ * @author mitch
+ * @since 30/12/15
+ */
 @SuppressWarnings("unchecked") //Because of reusing `currentContainer` for both maps and lists
 public class JsonParse {
+
+    /**
+     * Converts {@param jsonString} into a {@link Map}
+     * @param jsonString parsed
+     * @return the contents of the {@param jsonString}
+     */
     public Map<String, Object> map(String jsonString) {
         return (Map<String, Object>) parse(jsonString, Type.OBJECT);
     }
 
+    /**
+     * Converts {@param jsonString} into a {@link List}
+     * @param jsonString parsed
+     * @return the contents of the {@param jsonString}
+     */
     public List<Object> list(String jsonString) {
         return (List<Object>) parse(jsonString, Type.ARRAY);
     }
 
+    /**
+     * Parses {@param jsonString} according to what the outermost structure is
+     * @param jsonString parsed
+     * @param type type of outermost structure, expecting {@link Type#OBJECT} or {@link Type#ARRAY}
+     * @return the contents of {@param jsonString}
+     */
     public static Object parse(String jsonString, Type type) {
         Stack<String> propertyNameStack = new Stack<>();
         Stack<Object> containerStack = new Stack<>();
@@ -33,11 +52,13 @@ public class JsonParse {
             endOffset = jsonString.lastIndexOf('}');
             currentContainer = new HashMap<>();
             propertyName = ""; // Will be set whenever property name is entered
-        } else {
+        } else if (type == Type.ARRAY) {
             offset = jsonString.indexOf('[');
             endOffset = jsonString.lastIndexOf(']');
             currentContainer = new ArrayList<>();
             propertyName = "[]";
+        } else {
+            throw new JsonParseException("Can't parse a structure that isn't an OBJECT or ARRAY");
         }
 
         if (offset == -1 || endOffset == -1) {
@@ -234,7 +255,7 @@ public class JsonParse {
     /**
      * Handles the potential completion of a "section", returning true if a section was just completed (e.g. this is
      * called on the space after a number, completing the number)
-     * @return true if section termination just occurred
+     * @return true if section termination just occurred, false otherwise
      */
     private static boolean checkValueTermination(Stack<String> propertyNameStack, Object currentContainer, String jsonString, int fieldStart, int fieldEnd, Type currentType, String propertyName) {
         String valueString = jsonString.substring(fieldStart, fieldEnd);

@@ -198,6 +198,12 @@ public class JsonParseTest {
         assertFormatting("{\"a\": v}", "a: value could not be parsed");
     }
 
+    /**
+     * I've opted towards "[]" instead of an actual number in JSON traces because of performance concerns. In order to
+     * provide the index number, for each array in the trace, we'd need to have the array index in the property name
+     * stack. Upon dealing with an array of objects, there'd be a lot of {@code String.valueOf(index)} and
+     * {@code Integer.parseInt(indexString)}.
+     */
     @Test
     public void shouldUseSquareBracketsForFormattingErrorsInArrays() {
         assertFormatting(Type.ARRAY, "[true, false false]", "[]: wasn't followed by a comma");
