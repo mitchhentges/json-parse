@@ -2,6 +2,7 @@ package ca.fuzzlesoft;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -176,6 +177,23 @@ public class JsonParseTest {
         String test = "\t\n{\t}\n\t";
         Map<String, Object> expected = new HashMap<>();
         Assert.assertEquals(expected, jsonParse.map(test));
+    }
+
+    @Test
+    public void shouldOnlyThrowJsonParseExceptionOnTooManyClosingTags() {
+        try {
+            jsonParse.map("{}}");
+            jsonParse.list("[]]");
+        } catch (JsonParseException ignored) {}
+    }
+
+    @Ignore //TODO
+    @Test
+    public void shouldThrowExceptionOnAlternatingClosingTags() {
+        try {
+            jsonParse.map("{\"a\":[{]}}");
+            Assert.fail("Shouldn't consider closing tags equal");
+        } catch (JsonParseException ignored) {}
     }
 
     @Test

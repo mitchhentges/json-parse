@@ -87,6 +87,7 @@ public class JsonParse {
 
             if (current == '}' || current == ']') {
                 if (checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName)) typeStack.pop();
+                if (containerStack.isEmpty()) throw new JsonParseException("Too many closing tags");
                 Object upperContainer = containerStack.pop();
                 String parentName = propertyNameStack.pop();
                 if (upperContainer instanceof Map) {
