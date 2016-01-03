@@ -9,12 +9,10 @@ import java.util.*;
 @SuppressWarnings("unchecked") //Because of reusing `currentContainer` for both maps and lists
 public class JsonParse {
     public Map<String, Object> map(String jsonString) {
-        jsonString = ContainingStrip.OBJECT.strip(jsonString);
         return (Map<String, Object>) parse(jsonString, Type.OBJECT);
     }
 
     public List<Object> list(String jsonString) {
-        jsonString = ContainingStrip.ARRAY.strip(jsonString);
         return (List<Object>) parse(jsonString, Type.ARRAY);
     }
 
@@ -26,19 +24,27 @@ public class JsonParse {
         Type currentType = type;
 
         boolean expectingComma = false, expectingColon = false;
-        int fieldStart = 0;
+        int fieldStart = 0, offset, endOffset;
         String propertyName = "";
 
         Object currentContainer;
         if (type == Type.OBJECT) {
+            offset = jsonString.indexOf('{');
+            endOffset = jsonString.lastIndexOf('}');
             currentContainer = new HashMap<>();
         } else {
+            offset = jsonString.indexOf('[');
+            endOffset = jsonString.lastIndexOf(']');
             currentContainer = new ArrayList<>();
+        }
+
+        if (offset == -1 || endOffset == -1) {
+            throw new JsonParseException("Json string didn't contain " + type);
         }
 
         char current;
         int i;
-        for (i = 0; i < jsonString.length(); i++) {
+        for (i = offset + 1; i < endOffset; i++) {
             current = jsonString.charAt(i);
 
             if (currentType == Type.NAME) {

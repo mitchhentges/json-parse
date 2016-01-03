@@ -147,6 +147,35 @@ public class JsonParseTest {
         Assert.assertEquals(expected, jsonParse.map(test));
     }
 
+    @Test
+    public void shouldThrowExceptionIfNoObject() {
+        String noObject = "    ";
+        String noEnd = " { ";
+        String noStart = " } ";
+
+        try {
+            jsonParse.map(noObject);
+            Assert.fail("Did not not throw exception when there was no containing object");
+        } catch (Exception ignored) {}
+
+        try {
+            jsonParse.map(noEnd);
+            Assert.fail("Did not throw exception when object didn't end");
+        } catch (Exception ignored) {}
+
+        try {
+            jsonParse.map(noStart);
+            Assert.fail("Did not throw exception when object didn't start");
+        } catch (Exception ignored) {}
+    }
+
+    @Test
+    public void shouldAllowTabsOrNewlines() {
+        String test = "\t\n{\t}\n\t";
+        Map<String, Object> expected = new HashMap<>();
+        Assert.assertEquals(expected, jsonParse.map(test));
+    }
+
     static class MapBuilder {
         private final Map<String, Object> map = new HashMap<>();
         private MapBuilder() {}
