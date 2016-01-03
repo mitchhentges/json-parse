@@ -7,9 +7,6 @@ import java.util.*;
 * @since 30/12/15
 */
 public class JsonParse {
-    private static final String FALSE = "false";
-    private static final String NULL = "null";
-
     private Stack<String> propertyNameStack;
     private Stack<Type> typeStack;
     private Stack<Object> containerStack;
@@ -22,8 +19,6 @@ public class JsonParse {
     private int fieldStart = 0;
     private int i = 0;
 
-    private boolean matchesTrue = true;
-    private boolean matchesFalse = true;
     private String propertyName = "";
 
     public Map<String, Object> map(String jsonString) {
@@ -140,8 +135,6 @@ public class JsonParse {
                     typeStack.push(Type.BOOLEAN);
                     currentType = Type.BOOLEAN;
                     fieldStart = i;
-                    matchesTrue = true;
-                    matchesFalse = true;
                 } else if (current == 'n') {
                     typeStack.pop();
                     typeStack.push(Type.NULL);
@@ -181,8 +174,6 @@ public class JsonParse {
                     typeStack.push(Type.BOOLEAN);
                     currentType = Type.BOOLEAN;
                     fieldStart = i;
-                    matchesTrue = true;
-                    matchesFalse = true;
                 } else if (current == 'n') {
                     typeStack.push(Type.NULL);
                     currentType = Type.NULL;
@@ -214,12 +205,6 @@ public class JsonParse {
 
                 throw new JsonParseException("Object contained unexpected character");
             }
-
-            if (currentType == Type.NUMBER) continue;
-
-            if (currentType == Type.BOOLEAN) continue;
-
-            if (currentType == Type.NULL) continue;
         }
 
         checkValueTermination();
@@ -249,12 +234,12 @@ public class JsonParse {
             boolean value = Boolean.valueOf(substring);
 
             //If boolean isn't parsable, will get "false"
-            if (!value && !substring.equals(FALSE)) {
+            if (!value && !substring.equals("false")) {
                 throw new JsonParseException(propertyName + "| Unable to parse value. Perhaps it needs quotes?");
             }
             put(Boolean.valueOf(substring));
         } else if (currentType == Type.NULL) {
-            if (!substring.equals(NULL)) {
+            if (!substring.equals("null")) {
                 throw new JsonParseException(propertyName + "| Unable to parse value. Perhaps it needs quotes?");
             }
             put(null);
