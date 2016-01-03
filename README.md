@@ -1,4 +1,4 @@
-# Json Parse
+# Json Parse [![Build Status](https://travis-ci.org/mitchhentges/json-parse.svg?branch=master)](https://travis-ci.org/mitchhentges/json-parse)
 
 A tool to quickly parse JSON into Java maps and lists. Goes in a single pass, so should be `O(n)`.
 Competes very well with FasterXML's Jackson.
