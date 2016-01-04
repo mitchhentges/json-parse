@@ -12,28 +12,28 @@ import java.util.*;
 public class JsonParse {
 
     /**
-     * Converts {@param jsonString} into a {@link Map}
+     * Converts jsonString into a {@link Map}
      * @param jsonString parsed
-     * @return the contents of the {@param jsonString}
+     * @return the contents of the jsonString
      */
     public Map<String, Object> map(String jsonString) {
         return (Map<String, Object>) parse(jsonString, Type.OBJECT);
     }
 
     /**
-     * Converts {@param jsonString} into a {@link List}
+     * Converts jsonString into a {@link List}
      * @param jsonString parsed
-     * @return the contents of the {@param jsonString}
+     * @return the contents of the jsonString
      */
     public List<Object> list(String jsonString) {
         return (List<Object>) parse(jsonString, Type.ARRAY);
     }
 
     /**
-     * Parses {@param jsonString} according to what the outermost structure is
+     * Parses jsonString according to what the outermost structure is
      * @param jsonString parsed
      * @param type type of outermost structure, expecting {@link Type#OBJECT} or {@link Type#ARRAY}
-     * @return the contents of {@param jsonString}
+     * @return the contents of jsonString
      */
     public static Object parse(String jsonString, Type type) {
         Stack<String> propertyNameStack = new Stack<>();
