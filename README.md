@@ -14,6 +14,22 @@ Map<String, Object> map = parse.map(mapString);
 List<Object> list = parse.list(listString);
 ```
 
+## Getting the dependency
+
+**Maven**
+```
+<dependency>
+    <groupId>ca.fuzzlesoft</groupId>
+    <artifactId>json-parse</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+**Gradle**
+```
+compile 'ca.fuzzlesoft:json-parse:1.0.0'
+```
+
 ## Features
 
 * Convert a JSON string to a Java `List<Object>`
