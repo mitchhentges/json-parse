@@ -56,5 +56,8 @@ on the large scale. Besides, my goal is for this to be a "finish and forget" pro
 add up over time, while the maintenance cost is nonexistent because the code "just works". We'll see how naive this
 is over time ;)
 
+To confirm that I'm not just a terrible developer, see my infrastructure contributions to the
+[Binder app](https://github.com/binder-app/android)
+
 ## License
 [MIT License (Expat)](http://www.opensource.org/licenses/mit-license.php)
