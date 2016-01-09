@@ -70,22 +70,8 @@ public class JsonParse {
         for (i = offset + 1; i < endOffset; i++) {
             current = jsonString.charAt(i);
 
-            if (currentType == Type.NAME) {
-                if (current == '"') {
-                    if (i - 1 >= 0 && jsonString.charAt(i - 1) == '\\') {
-                        continue; //This quotation is escaped
-                    }
-
-                    propertyName = jsonString.substring(fieldStart, i);
-                    typeStack.pop();
-                    typeStack.push(Type.HEURISTIC);
-                    currentType = Type.HEURISTIC;
-                    expectingColon = true;
-                }
-
-                continue;
-            }
-
+            // Have to check if in a value string/name first. If so, ignore any special
+            // characters (commas, colons, object literals, etc.)
             if (currentType == Type.STRING) {
                 if (current == '"') {
                     if (i - 1 >= 0 && jsonString.charAt(i - 1) == '\\') {
@@ -106,6 +92,23 @@ public class JsonParse {
                 continue;
             }
 
+            if (currentType == Type.NAME) {
+                if (current == '"') {
+                    if (i - 1 >= 0 && jsonString.charAt(i - 1) == '\\') {
+                        continue; //This quotation is escaped
+                    }
+
+                    propertyName = jsonString.substring(fieldStart, i);
+                    typeStack.pop();
+                    typeStack.push(Type.HEURISTIC);
+                    currentType = Type.HEURISTIC;
+                    expectingColon = true;
+                }
+
+                continue;
+            }
+
+            // Check ending literals next, because they can act in place of commas or whitespace in terminating a value
             if (current == '}' || current == ']') {
                 if (checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName)) typeStack.pop();
                 if (containerStack.isEmpty()) throw new JsonParseException("Too many closing tags");
