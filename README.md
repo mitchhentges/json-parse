@@ -1,6 +1,6 @@
 # Json Parse [![Build Status](https://travis-ci.org/mitchhentges/json-parse.svg?branch=master)](https://travis-ci.org/mitchhentges/json-parse)
 
-A tool to quickly parse JSON into Java maps and lists. Competes well with FasterXML's Jackson with an extremely
+A tool to quickly parse JSON into Java maps and lists. Usually faster than FasterXML's Jackson with an extremely
 small memory footprint
 
 ## Usage
@@ -48,6 +48,13 @@ converted. This is the job of a "binding framework"
 
 Since efficiency is a primary goal of this project, array indices could not be added to JSON traces. It would
 cost some performance, and that's not worth it ;)
+
+* Why is the code squashed so much?
+
+I wanted to minimize the number of function calls. Though the cost is minimal, it will still affect performance
+on the large scale. Besides, my goal is for this to be a "finish and forget" project, where the speed benefits
+add up over time, while the maintenance cost is nonexistent because the code "just works". We'll see how naive this
+is over time ;)
 
 ## License
 [MIT License (Expat)](http://www.opensource.org/licenses/mit-license.php)
