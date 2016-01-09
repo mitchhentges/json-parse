@@ -10,7 +10,6 @@ import java.util.*;
  */
 @SuppressWarnings("unchecked") //Because of reusing `currentContainer` for both maps and lists
 public class JsonParse {
-
     /**
      * Converts jsonString into a {@link Map}
      * @param jsonString parsed
@@ -35,6 +34,7 @@ public class JsonParse {
      * @param type type of outermost structure, expecting {@link Type#OBJECT} or {@link Type#ARRAY}
      * @return the contents of jsonString
      */
+    @SuppressWarnings("ConstantConditions")
     public static Object parse(String jsonString, Type type) {
         Stack<String> propertyNameStack = new Stack<>();
         Stack<Object> containerStack = new Stack<>();
@@ -165,16 +165,6 @@ public class JsonParse {
                     typeStack.push(Type.STRING);
                     currentType = Type.STRING;
                     fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
-                } else if (current == 't' || current == 'f') {
-                    typeStack.pop();
-                    typeStack.push(Type.BOOLEAN);
-                    currentType = Type.BOOLEAN;
-                    fieldStart = i;
-                } else if (current == 'n') {
-                    typeStack.pop();
-                    typeStack.push(Type.NULL);
-                    currentType = Type.NULL;
-                    fieldStart = i;
                 } else if (current == '{') {
                     typeStack.pop();
                     typeStack.push(Type.OBJECT);
@@ -191,8 +181,11 @@ public class JsonParse {
                     currentContainer = new ArrayList<>();
                     propertyName = "[]";
                 } else {
-                    propertyNameStack.push(propertyName);
-                    throw new JsonParseException(propertyNameStack, "value could not be parsed");
+                    // Assume parsing a constant ("null", "true", "false", etc)
+                    typeStack.pop();
+                    typeStack.push(Type.CONSTANT);
+                    currentType = Type.CONSTANT;
+                    fieldStart = i;
                 }
 
                 continue;
@@ -207,14 +200,6 @@ public class JsonParse {
                     typeStack.push(Type.STRING);
                     currentType = Type.STRING;
                     fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
-                } else if (current == 't' || current == 'f') {
-                    typeStack.push(Type.BOOLEAN);
-                    currentType = Type.BOOLEAN;
-                    fieldStart = i;
-                } else if (current == 'n') {
-                    typeStack.push(Type.NULL);
-                    currentType = Type.NULL;
-                    fieldStart = i;
                 } else if (current == '{') {
                     typeStack.push(Type.OBJECT);
                     currentType = Type.OBJECT;
@@ -228,8 +213,10 @@ public class JsonParse {
                     containerStack.push(currentContainer);
                     currentContainer = new ArrayList<>();
                 } else {
-                    propertyNameStack.push(propertyName);
-                    throw new JsonParseException(propertyNameStack, "value could not be parsed");
+                    typeStack.pop();
+                    typeStack.push(Type.CONSTANT);
+                    currentType = Type.CONSTANT;
+                    fieldStart = i;
                 }
 
                 continue;
@@ -259,7 +246,7 @@ public class JsonParse {
      */
     private static boolean checkValueTermination(Stack<String> propertyNameStack, Object currentContainer, String jsonString, int fieldStart, int fieldEnd, Type currentType, String propertyName) {
         String valueString = jsonString.substring(fieldStart, fieldEnd);
-        Object value = null;
+        Object value;
         if (currentType == Type.NUMBER) {
             try {
                 value = Long.valueOf(valueString);
@@ -270,24 +257,22 @@ public class JsonParse {
                 } catch (NumberFormatException f) {
                     //Nope, not a decimal, invalid number
                     propertyNameStack.push(propertyName);
-                    throw new JsonParseException(propertyNameStack, "\"" + valueString + "\" is an invalid value");
+                    throw new JsonParseException(propertyNameStack, "\"" + valueString
+                            + "\" expected to be a number, but wasn't");
                 }
             }
-        } else if (currentType == Type.BOOLEAN) {
-            boolean bool = Boolean.valueOf(valueString);
-
-            //If boolean isn't parsable, will get "false"
-            if (!bool && !valueString.equals("false")) {
+        } else if (currentType == Type.CONSTANT) {
+            if (valueString.equals("false")) {
+                value = false;
+            } else if (valueString.equals("true")) {
+                value = true;
+            } else if (valueString.equals("null")) {
+                value = null;
+            } else {
                 propertyNameStack.push(propertyName);
-                throw new JsonParseException(propertyNameStack, "\"" + valueString + "\" is an invalid value");
+                throw new JsonParseException(propertyNameStack, "\"" + valueString
+                        + "\" is not a valid constant. Maybe missing quotes?");
             }
-            value = bool;
-        } else if (currentType == Type.NULL) {
-            if (!valueString.equals("null")) {
-                propertyNameStack.push(propertyName);
-                throw new JsonParseException(propertyNameStack, "\"" + valueString + "\" is an invalid value");
-            }
-            //toPut is null by default
         } else {
             return false;
         }
@@ -306,8 +291,7 @@ public class JsonParse {
         HEURISTIC,
         NUMBER,
         STRING,
-        BOOLEAN,
-        NULL,
+        CONSTANT,
         OBJECT,
         ARRAY
     }
