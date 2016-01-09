@@ -213,7 +213,6 @@ public class JsonParse {
                     containerStack.push(currentContainer);
                     currentContainer = new ArrayList<>();
                 } else {
-                    typeStack.pop();
                     typeStack.push(Type.CONSTANT);
                     currentType = Type.CONSTANT;
                     fieldStart = i;
