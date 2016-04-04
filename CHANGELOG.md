@@ -1,3 +1,10 @@
+# 1.0.3
+
+Performance release
+
+* Detecting constants (whitespace, numbers) is now faster
+* Improves avoidance of processing for end-of-block (e.g. object or array), when no end-of-block is occurring
+
 # 1.0.2
 
 * Don't include Junit in compile scope. Instead, it should only be available for testing
