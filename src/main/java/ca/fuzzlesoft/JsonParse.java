@@ -108,6 +108,15 @@ public class JsonParse {
                 continue;
             }
 
+            if (Constants.isWhitespace(current)) {
+                if (!checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName)) continue;
+
+                expectingComma = true;
+                typeStack.pop();
+                currentType = typeStack.peek();
+                continue;
+            }
+
             // Check ending literals next, because they can act in place of commas or whitespace in terminating a value
             if (current == '}' || current == ']') {
                 if (checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName)) typeStack.pop();
@@ -120,15 +129,6 @@ public class JsonParse {
                     ((List<Object>) upperContainer).add(currentContainer);
                 }
                 currentContainer = upperContainer;
-                expectingComma = true;
-                typeStack.pop();
-                currentType = typeStack.peek();
-                continue;
-            }
-
-            if (Constants.isWhitespace(current)) {
-                if (!checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName)) continue;
-
                 expectingComma = true;
                 typeStack.pop();
                 currentType = typeStack.peek();
