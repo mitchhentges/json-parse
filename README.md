@@ -3,6 +3,9 @@
 A tool to quickly parse JSON into Java maps and lists. Usually faster than FasterXML's Jackson with an extremely
 small memory footprint
 
+![](resources/comparison-nocache.png)
+![](resources/comparison-cache.png)
+
 ## Usage
 
 ```
