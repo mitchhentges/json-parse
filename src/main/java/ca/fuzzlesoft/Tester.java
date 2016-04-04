@@ -18,7 +18,7 @@ public class Tester {
         System.out.println("Waiting for input");
         scanner.nextLine();
         String toParse = "{\"a\":true, \"b\":\"yes\", \"c\":\"totally\"}";
-        int iterations = 500000;
+        int iterations = 5000000;
         ObjectMapper mapper = new ObjectMapper();
         JsonParse parse = new JsonParse();
 
@@ -40,7 +40,7 @@ public class Tester {
             parse.map(toParse);
         }
 
-        System.out.println("JsonParse done" + (System.currentTimeMillis() - start));
+        System.out.println("JsonParse done|" + (System.currentTimeMillis() - start));
 
         //System.out.println("Waiting for input, again");
         //scanner.nextLine();

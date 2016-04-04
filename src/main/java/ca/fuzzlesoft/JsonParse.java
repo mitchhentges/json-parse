@@ -242,11 +242,18 @@ public class JsonParse {
     }
 
     /**
-     * Handles the potential completion of a "section", returning true if a section was just completed (e.g. this is
-     * called on the space after a number, completing the number)
+     * Handles the potential completion of a "section" (property name or value), returning true if a section was just
+     * completed (e.g. this is called on the space after a number, completing the number)
      * @return true if section termination just occurred, false otherwise
      */
-    private static boolean checkValueTermination(Stack<String> propertyNameStack, Object currentContainer, String jsonString, int fieldStart, int fieldEnd, Type currentType, String propertyName) {
+    private static boolean checkValueTermination(Stack<String> propertyNameStack, Object currentContainer,
+                                                 String jsonString, int fieldStart, int fieldEnd, Type currentType,
+                                                 String propertyName) {
+
+        if (currentType != Type.NUMBER && currentType != Type.CONSTANT) {
+            return false;
+        }
+
         String valueString = jsonString.substring(fieldStart, fieldEnd);
         Object value;
         if (currentType == Type.NUMBER) {
@@ -263,20 +270,23 @@ public class JsonParse {
                             + "\" expected to be a number, but wasn't");
                 }
             }
-        } else if (currentType == Type.CONSTANT) {
-            if (valueString.equals("false")) {
-                value = false;
-            } else if (valueString.equals("true")) {
-                value = true;
-            } else if (valueString.equals("null")) {
-                value = null;
-            } else {
-                propertyNameStack.push(propertyName);
-                throw new JsonParseException(propertyNameStack, "\"" + valueString
-                        + "\" is not a valid constant. Maybe missing quotes?");
-            }
         } else {
-            return false;
+            // Type is CONSTANT
+            switch (valueString) {
+                case "false":
+                    value = false;
+                    break;
+                case "true":
+                    value = true;
+                    break;
+                case "null":
+                    value = null;
+                    break;
+                default:
+                    propertyNameStack.push(propertyName);
+                    throw new JsonParseException(propertyNameStack, "\"" + valueString
+                            + "\" is not a valid constant. Maybe missing quotes?");
+            }
         }
 
         if (currentContainer instanceof Map) {
