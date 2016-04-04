@@ -1,3 +1,7 @@
+# 1.0.2
+
+* Don't include Junit in compile scope. Instead, it should only be available for testing
+
 # 1.0.1
 
 Performance release
