@@ -126,7 +126,7 @@ public class JsonParse {
                 continue;
             }
 
-            if (Constants.is(Constants.WHITE, current)) {
+            if (Constants.isWhitespace(current)) {
                 if (!checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName)) continue;
 
                 expectingComma = true;
@@ -158,7 +158,7 @@ public class JsonParse {
             }
 
             if (currentType == Type.HEURISTIC) {
-                if (Constants.is(Constants.NUMBERS, current)) {
+                if (Constants.isNumber(current)) {
                     typeStack.pop();
                     typeStack.push(Type.NUMBER);
                     currentType = Type.NUMBER;
@@ -195,7 +195,7 @@ public class JsonParse {
             }
 
             if (currentType == Type.ARRAY) {
-                if (Constants.is(Constants.NUMBERS, current)) {
+                if (Constants.isNumber(current)) {
                     typeStack.push(Type.NUMBER);
                     currentType = Type.NUMBER;
                     fieldStart = i;

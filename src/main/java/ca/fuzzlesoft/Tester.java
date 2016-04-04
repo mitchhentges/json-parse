@@ -15,15 +15,17 @@ public class Tester {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        //System.out.println("Waiting for input");
-        //scanner.nextLine();
-        String toParse = "{\"a\":true}";
-        int iterations = 1000000;
+        System.out.println("Waiting for input");
+        scanner.nextLine();
+        String toParse = "{\"a\":true, \"b\":\"yes\", \"c\":\"totally\"}";
+        int iterations = 500000;
+        ObjectMapper mapper = new ObjectMapper();
+        JsonParse parse = new JsonParse();
 
         long start = System.currentTimeMillis();
 
         for (int i = 0; i < iterations; i++) {
-            ObjectMapper mapper = new ObjectMapper();
+
             try {
                 mapper.readValue(toParse, new TypeReference<Map<String, Object>>(){});
             } catch (IOException e) {
@@ -35,8 +37,7 @@ public class Tester {
         start = System.currentTimeMillis();
 
         for (int i = 0; i < iterations; i++) {
-            JsonParse parse = new JsonParse();
-            parse.map("{\"a\":true}");
+            parse.map(toParse);
         }
 
         System.out.println("JsonParse done" + (System.currentTimeMillis() - start));
