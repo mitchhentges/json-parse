@@ -108,6 +108,15 @@ public class JsonParse {
                 continue;
             }
 
+            if (Constants.isWhitespace(current)) {
+                if (!checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName)) continue;
+
+                expectingComma = true;
+                typeStack.pop();
+                currentType = typeStack.peek();
+                continue;
+            }
+
             // Check ending literals next, because they can act in place of commas or whitespace in terminating a value
             if (current == '}' || current == ']') {
                 if (checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName)) typeStack.pop();
@@ -120,15 +129,6 @@ public class JsonParse {
                     ((List<Object>) upperContainer).add(currentContainer);
                 }
                 currentContainer = upperContainer;
-                expectingComma = true;
-                typeStack.pop();
-                currentType = typeStack.peek();
-                continue;
-            }
-
-            if (Constants.is(Constants.WHITE, current)) {
-                if (!checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName)) continue;
-
                 expectingComma = true;
                 typeStack.pop();
                 currentType = typeStack.peek();
@@ -158,7 +158,7 @@ public class JsonParse {
             }
 
             if (currentType == Type.HEURISTIC) {
-                if (Constants.is(Constants.NUMBERS, current)) {
+                if (Constants.isNumber(current)) {
                     typeStack.pop();
                     typeStack.push(Type.NUMBER);
                     currentType = Type.NUMBER;
@@ -195,7 +195,7 @@ public class JsonParse {
             }
 
             if (currentType == Type.ARRAY) {
-                if (Constants.is(Constants.NUMBERS, current)) {
+                if (Constants.isNumber(current)) {
                     typeStack.push(Type.NUMBER);
                     currentType = Type.NUMBER;
                     fieldStart = i;
@@ -242,11 +242,18 @@ public class JsonParse {
     }
 
     /**
-     * Handles the potential completion of a "section", returning true if a section was just completed (e.g. this is
-     * called on the space after a number, completing the number)
+     * Handles the potential completion of a "section" (property name or value), returning true if a section was just
+     * completed (e.g. this is called on the space after a number, completing the number)
      * @return true if section termination just occurred, false otherwise
      */
-    private static boolean checkValueTermination(Stack<String> propertyNameStack, Object currentContainer, String jsonString, int fieldStart, int fieldEnd, Type currentType, String propertyName) {
+    private static boolean checkValueTermination(Stack<String> propertyNameStack, Object currentContainer,
+                                                 String jsonString, int fieldStart, int fieldEnd, Type currentType,
+                                                 String propertyName) {
+
+        if (currentType != Type.NUMBER && currentType != Type.CONSTANT) {
+            return false;
+        }
+
         String valueString = jsonString.substring(fieldStart, fieldEnd);
         Object value;
         if (currentType == Type.NUMBER) {
@@ -263,7 +270,8 @@ public class JsonParse {
                             + "\" expected to be a number, but wasn't");
                 }
             }
-        } else if (currentType == Type.CONSTANT) {
+        } else {
+            // Type is CONSTANT
             if (valueString.equals("false")) {
                 value = false;
             } else if (valueString.equals("true")) {
@@ -275,8 +283,6 @@ public class JsonParse {
                 throw new JsonParseException(propertyNameStack, "\"" + valueString
                         + "\" is not a valid constant. Maybe missing quotes?");
             }
-        } else {
-            return false;
         }
 
         if (currentContainer instanceof Map) {

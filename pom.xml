@@ -55,7 +55,6 @@
         </snapshotRepository>
     </distributionManagement>
 
-
     <profiles>
         <profile>
             <id>release</id>
