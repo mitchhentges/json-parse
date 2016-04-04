@@ -272,20 +272,16 @@ public class JsonParse {
             }
         } else {
             // Type is CONSTANT
-            switch (valueString) {
-                case "false":
-                    value = false;
-                    break;
-                case "true":
-                    value = true;
-                    break;
-                case "null":
-                    value = null;
-                    break;
-                default:
-                    propertyNameStack.push(propertyName);
-                    throw new JsonParseException(propertyNameStack, "\"" + valueString
-                            + "\" is not a valid constant. Maybe missing quotes?");
+            if (valueString.equals("false")) {
+                value = false;
+            } else if (valueString.equals("true")) {
+                value = true;
+            } else if (valueString.equals("null")) {
+                value = null;
+            } else {
+                propertyNameStack.push(propertyName);
+                throw new JsonParseException(propertyNameStack, "\"" + valueString
+                        + "\" is not a valid constant. Maybe missing quotes?");
             }
         }
 
