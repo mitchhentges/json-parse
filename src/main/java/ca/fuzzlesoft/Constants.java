@@ -12,11 +12,11 @@ public class Constants {
     }
 
     public static boolean isNumber(char c) {
-        return c == 'e'
-                || c == 'E'
-                || c == '+'
-                || c == '-'
+        return (c >= '0' && c <= '9')
                 || c == '.'
-                || (c >= '0' && c <= '9');
+                || c == '-'
+                || c == 'e'
+                || c == 'E'
+                || c == '+';
     }
 }
