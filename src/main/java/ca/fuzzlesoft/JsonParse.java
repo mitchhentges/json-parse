@@ -108,7 +108,7 @@ public class JsonParse {
 
             if (currentType == Type.NUMBER) {
                 boolean withDecimal = false;
-                while (current != ' ' && current != ',' && current != '}' && current != ']' && i < endOffset) {
+                while (current != ',' && current != '}' && current != ']' && !Constants.isWhitespace(current) && i < endOffset) {
                     if (!withDecimal && current == '.' || current == 'e' || current == 'E') {
                         withDecimal = true;
                     }
@@ -138,7 +138,7 @@ public class JsonParse {
                 typeStack.pop();
                 currentType = typeStack.peek();
 
-                if (current == ' ') {
+                if (Constants.isWhitespace(current)) {
                     expectingComma = true;
                     continue;
                 }
@@ -149,7 +149,7 @@ public class JsonParse {
             }
 
             if (currentType == Type.CONSTANT) {
-                while (current != ' ' && current != ',' && current != '}' && current != ']' && i < endOffset) {
+                while (current != ',' && current != '}' && current != ']' && !Constants.isWhitespace(current) && i < endOffset) {
                     current = jsonString.charAt(++i);
                 }
 
@@ -176,7 +176,7 @@ public class JsonParse {
                 typeStack.pop();
                 currentType = typeStack.peek();
 
-                if (current == ' ') {
+                if (Constants.isWhitespace(current)) {
                     expectingComma = true;
                     continue;
                 }

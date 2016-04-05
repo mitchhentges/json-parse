@@ -48,6 +48,17 @@ public class JsonParseTest {
     }
 
     @Test
+    public void shouldExcludeCharactersAfterNumbers() {
+        String test = "{\"foo\":1 ,\"bar\":2\t,\"baz\":3\n}";
+        Map<String, Object> expected = MapBuilder.init()
+                .add("foo", 1L)
+                .add("bar", 2L)
+                .add("baz", 3L)
+                .build();
+        Assert.assertEquals(expected, jsonParse.map(test));
+    }
+
+    @Test
     public void shouldParseBooleans() {
         String test = "{\"foo\":true,\"bar\":false}";
         Map<String, Object> expected = MapBuilder.init()
