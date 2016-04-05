@@ -4,6 +4,7 @@ A tool to quickly parse JSON into Java maps and lists. Usually faster than Faste
 small memory footprint.
 
 _Lower is better:_
+
 ![](resources/comparison-nocache.png)
 ![](resources/comparison-cache.png)
 
