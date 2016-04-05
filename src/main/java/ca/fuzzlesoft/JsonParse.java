@@ -73,37 +73,36 @@ public class JsonParse {
             // Have to check if in a value string/name first. If so, ignore any special
             // characters (commas, colons, object literals, etc.)
             if (currentType == Type.STRING) {
-                if (current == '"') {
-                    if (i - 1 >= 0 && jsonString.charAt(i - 1) == '\\') {
-                        continue; //This quotation is escaped
-                    }
 
-                    Object value = jsonString.substring(fieldStart, i);
-                    if (currentContainer instanceof Map) {
-                        ((Map<String, Object>) currentContainer).put(propertyName, value);
-                    } else {
-                        ((List<Object>) currentContainer).add(value);
-                    }
-                    expectingComma = true;
-                    typeStack.pop();
-                    currentType = typeStack.peek();
+                // Fast-forward to end of string value, which is a '"' character
+                do {
+                    i = jsonString.indexOf('"', i);
+                } while (jsonString.charAt(i - 1) == '\\');
+
+                Object value = jsonString.substring(fieldStart, i);
+                if (currentContainer instanceof Map) {
+                    ((Map<String, Object>) currentContainer).put(propertyName, value);
+                } else {
+                    ((List<Object>) currentContainer).add(value);
                 }
+                expectingComma = true;
+                typeStack.pop();
+                currentType = typeStack.peek();
 
                 continue;
             }
 
             if (currentType == Type.NAME) {
-                if (current == '"') {
-                    if (i - 1 >= 0 && jsonString.charAt(i - 1) == '\\') {
-                        continue; //This quotation is escaped
-                    }
+                // Fast-forward to destination, which is an ending quote
+                do {
+                    i = jsonString.indexOf('"', i);
+                } while (jsonString.charAt(i - 1) == '\\');
 
-                    propertyName = jsonString.substring(fieldStart, i);
-                    typeStack.pop();
-                    typeStack.push(Type.HEURISTIC);
-                    currentType = Type.HEURISTIC;
-                    expectingColon = true;
-                }
+                propertyName = jsonString.substring(fieldStart, i);
+                typeStack.pop();
+                typeStack.push(Type.HEURISTIC);
+                currentType = Type.HEURISTIC;
+                expectingColon = true;
 
                 continue;
             }
