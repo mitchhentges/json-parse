@@ -1,11 +1,11 @@
 # Json Parse [![Build Status](https://travis-ci.org/mitchhentges/json-parse.svg?branch=master)](https://travis-ci.org/mitchhentges/json-parse)
 
-A tool to quickly parse JSON into Java maps and lists. Usually faster than FasterXML's Jackson with an extremely
-small memory footprint.
+A tool to quickly parse JSON into Java maps and lists. Consistently faster (sometimes more than 4x) than FasterXML's
+Jackson with an extremely small memory footprint.
 
 _Lower is better:_
 
-![](resources/comparison-cache.png)
+![](resources/comparison.png)
 
 ## Usage
 
@@ -59,9 +59,6 @@ I wanted to minimize the number of function calls. Though the cost is minimal, i
 on the large scale. Besides, my goal is for this to be a "finish and forget" project, where the speed benefits
 add up over time, while the maintenance cost is nonexistent because the code "just works". We'll see how naive this
 is over time ;)
-
-To confirm that I'm not just a terrible developer, see my infrastructure contributions to the
-[Binder app](https://github.com/binder-app/android)
 
 ## License
 [MIT License (Expat)](http://www.opensource.org/licenses/mit-license.php)
