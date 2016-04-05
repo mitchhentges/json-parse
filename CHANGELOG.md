@@ -1,3 +1,7 @@
+# 1.2.0
+
+* `list()` and `map()` are now static methods. Building an object is no longer necessary
+
 # 1.1.0
 
 Performance release
