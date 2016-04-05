@@ -35,6 +35,15 @@ public class JsonParseTest {
     }
 
     @Test
+    public void shouldParseSingleCharacterStrings() {
+        String test = "{\"a\":\"b\"}";
+        Map<String, Object> expected = MapBuilder.init()
+                .add("a", "b")
+                .build();
+        Assert.assertEquals(expected, jsonParse.map(test));
+    }
+
+    @Test
     public void shouldParseNumbers() {
         String test = "{\"foo\":1234,\"bar\":-1.1e+1,\"baz\":2.2E-2,\"zurb\":1E-4,\"boop\":6}";
         Map<String, Object> expected = MapBuilder.init()

@@ -75,7 +75,7 @@ public class JsonParse {
             if (currentType == Type.STRING) {
                 // Fast-forward to end of string value, which is a '"' character
                 do {
-                    i = jsonString.indexOf('"', i);
+                    i = jsonString.indexOf('"', i + 1);
                 } while (jsonString.charAt(i - 1) == '\\');
 
                 Object value = jsonString.substring(fieldStart, i);
@@ -94,7 +94,7 @@ public class JsonParse {
             if (currentType == Type.NAME) {
                 // Fast-forward to destination, which is an ending quote
                 do {
-                    i = jsonString.indexOf('"', i);
+                    i = jsonString.indexOf('"', i + 1);
                 } while (jsonString.charAt(i - 1) == '\\');
 
                 propertyName = jsonString.substring(fieldStart, i);
