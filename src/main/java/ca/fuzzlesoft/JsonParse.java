@@ -42,7 +42,7 @@ public class JsonParse {
         typeStack.push(type);
         Type currentType = type;
 
-        boolean expectingComma = false, expectingColon = false;
+        boolean expectingComma = false, expectingColon = false, withDecimal = false;
         int fieldStart = 0, offset, endOffset;
         String propertyName;
 
@@ -109,7 +109,7 @@ public class JsonParse {
             }
 
             if (Constants.isWhitespace(current)) {
-                if (!checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName)) continue;
+                if (!checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName, withDecimal)) continue;
 
                 expectingComma = true;
                 typeStack.pop();
@@ -119,7 +119,7 @@ public class JsonParse {
 
             // Check ending literals next, because they can act in place of commas or whitespace in terminating a value
             if (current == '}' || current == ']') {
-                if (checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName)) typeStack.pop();
+                if (checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName, withDecimal)) typeStack.pop();
                 if (containerStack.isEmpty()) throw new JsonParseException("Too many closing tags");
                 Object upperContainer = containerStack.pop();
                 String parentName = propertyNameStack.pop();
@@ -137,7 +137,7 @@ public class JsonParse {
 
             if (current == ',') {
                 expectingComma = false;
-                if (!checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName)) continue;
+                if (!checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName, withDecimal)) continue;
 
                 typeStack.pop();
                 currentType = typeStack.peek();
@@ -163,6 +163,7 @@ public class JsonParse {
                     typeStack.push(Type.NUMBER);
                     currentType = Type.NUMBER;
                     fieldStart = i;
+                    withDecimal = false;
                 } else if (current == '"') {
                     typeStack.pop();
                     typeStack.push(Type.STRING);
@@ -199,6 +200,7 @@ public class JsonParse {
                     typeStack.push(Type.NUMBER);
                     currentType = Type.NUMBER;
                     fieldStart = i;
+                    withDecimal = false;
                 } else if (current == '"') {
                     typeStack.push(Type.STRING);
                     currentType = Type.STRING;
@@ -235,9 +237,13 @@ public class JsonParse {
                 throw new JsonParseException(propertyNameStack,
                         "unexpected character '" + current + "' where a property name is expected");
             }
+
+            if (current == '.') {
+                withDecimal = true;
+            }
         }
 
-        checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName);
+        checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName, withDecimal);
         return currentContainer;
     }
 
@@ -248,7 +254,7 @@ public class JsonParse {
      */
     private static boolean checkValueTermination(Stack<String> propertyNameStack, Object currentContainer,
                                                  String jsonString, int fieldStart, int fieldEnd, Type currentType,
-                                                 String propertyName) {
+                                                 String propertyName, boolean withDecimal) {
 
         if (currentType != Type.NUMBER && currentType != Type.CONSTANT) {
             return false;
@@ -258,17 +264,15 @@ public class JsonParse {
         Object value;
         if (currentType == Type.NUMBER) {
             try {
-                value = Long.valueOf(valueString);
-            } catch (NumberFormatException e) {
-                //Perhaps the number is a decimal
-                try {
+                if (withDecimal) {
                     value = Double.valueOf(valueString);
-                } catch (NumberFormatException f) {
-                    //Nope, not a decimal, invalid number
-                    propertyNameStack.push(propertyName);
-                    throw new JsonParseException(propertyNameStack, "\"" + valueString
-                            + "\" expected to be a number, but wasn't");
+                } else {
+                    value = Long.valueOf(valueString);
                 }
+            } catch (NumberFormatException e) {
+                propertyNameStack.push(propertyName);
+                throw new JsonParseException(propertyNameStack, "\"" + valueString
+                        + "\" expected to be a number, but wasn't");
             }
         } else {
             // Type is CONSTANT
