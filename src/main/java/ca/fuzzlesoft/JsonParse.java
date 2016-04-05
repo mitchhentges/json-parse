@@ -158,17 +158,17 @@ public class JsonParse {
             }
 
             if (currentType == Type.HEURISTIC) {
-                if (Constants.isNumber(current)) {
-                    typeStack.pop();
-                    typeStack.push(Type.NUMBER);
-                    currentType = Type.NUMBER;
-                    fieldStart = i;
-                    withDecimal = false;
-                } else if (current == '"') {
+                if (current == '"') {
                     typeStack.pop();
                     typeStack.push(Type.STRING);
                     currentType = Type.STRING;
                     fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
+                } else if (Constants.isLetter(current)) {
+                    // Assume parsing a constant ("null", "true", "false", etc)
+                    typeStack.pop();
+                    typeStack.push(Type.CONSTANT);
+                    currentType = Type.CONSTANT;
+                    fieldStart = i;
                 } else if (current == '{') {
                     typeStack.pop();
                     typeStack.push(Type.OBJECT);
@@ -185,42 +185,12 @@ public class JsonParse {
                     currentContainer = new ArrayList<>();
                     propertyName = "[]";
                 } else {
-                    // Assume parsing a constant ("null", "true", "false", etc)
+                    // Is a number
                     typeStack.pop();
-                    typeStack.push(Type.CONSTANT);
-                    currentType = Type.CONSTANT;
-                    fieldStart = i;
-                }
-
-                continue;
-            }
-
-            if (currentType == Type.ARRAY) {
-                if (Constants.isNumber(current)) {
                     typeStack.push(Type.NUMBER);
                     currentType = Type.NUMBER;
                     fieldStart = i;
                     withDecimal = false;
-                } else if (current == '"') {
-                    typeStack.push(Type.STRING);
-                    currentType = Type.STRING;
-                    fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
-                } else if (current == '{') {
-                    typeStack.push(Type.OBJECT);
-                    currentType = Type.OBJECT;
-                    propertyNameStack.push(propertyName);
-                    containerStack.push(currentContainer);
-                    currentContainer = new HashMap<>();
-                } else if (current == '[') {
-                    typeStack.push(Type.ARRAY);
-                    currentType = Type.ARRAY;
-                    propertyNameStack.push(propertyName);
-                    containerStack.push(currentContainer);
-                    currentContainer = new ArrayList<>();
-                } else {
-                    typeStack.push(Type.CONSTANT);
-                    currentType = Type.CONSTANT;
-                    fieldStart = i;
                 }
 
                 continue;
@@ -236,6 +206,39 @@ public class JsonParse {
 
                 throw new JsonParseException(propertyNameStack,
                         "unexpected character '" + current + "' where a property name is expected");
+            }
+
+            if (currentType == Type.ARRAY) {
+                if (current == '"') {
+                    typeStack.push(Type.STRING);
+                    currentType = Type.STRING;
+                    fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
+                } else if (Constants.isLetter(current)){
+                    // Assume parsing a constant ("null", "true", "false", etc)
+                    typeStack.push(Type.CONSTANT);
+                    currentType = Type.CONSTANT;
+                    fieldStart = i;
+                } else if (current == '{') {
+                    typeStack.push(Type.OBJECT);
+                    currentType = Type.OBJECT;
+                    propertyNameStack.push(propertyName);
+                    containerStack.push(currentContainer);
+                    currentContainer = new HashMap<>();
+                } else if (current == '[') {
+                    typeStack.push(Type.ARRAY);
+                    currentType = Type.ARRAY;
+                    propertyNameStack.push(propertyName);
+                    containerStack.push(currentContainer);
+                    currentContainer = new ArrayList<>();
+                } else {
+                    // Is a number
+                    typeStack.push(Type.NUMBER);
+                    currentType = Type.NUMBER;
+                    fieldStart = i;
+                    withDecimal = false;
+                }
+
+                continue;
             }
 
             if (current == '.') {
