@@ -1,3 +1,10 @@
+# 1.1.0
+
+Performance release
+
+* Refactored object `NAME` and value types `STRING`, `NUMBER` and `CONSTANT` to use forward look-aheads (my term) to
+increase speed
+
 # 1.0.3
 
 Performance release

@@ -25,13 +25,13 @@ List<Object> list = parse.list(listString);
 <dependency>
     <groupId>ca.fuzzlesoft</groupId>
     <artifactId>json-parse</artifactId>
-    <version>1.0.3</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
 **Gradle**
 ```
-compile 'ca.fuzzlesoft:json-parse:1.0.3'
+compile 'ca.fuzzlesoft:json-parse:1.1.0'
 ```
 
 ## Features
