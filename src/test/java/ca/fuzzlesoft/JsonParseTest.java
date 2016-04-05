@@ -18,20 +18,13 @@ import ca.fuzzlesoft.JsonParse.Type;
  */
 public class JsonParseTest {
 
-    private JsonParse jsonParse;
-
-    @Before
-    public void setUp() {
-        jsonParse = new JsonParse();
-    }
-
     @Test
     public void shouldParseStrings() {
         String test = "{\"foo\":\"bar\"}";
         Map<String, Object> expected = MapBuilder.init()
                 .add("foo", "bar")
                 .build();
-        Assert.assertEquals(expected, jsonParse.map(test));
+        Assert.assertEquals(expected, JsonParse.map(test));
     }
 
     @Test
@@ -40,7 +33,7 @@ public class JsonParseTest {
         Map<String, Object> expected = MapBuilder.init()
                 .add("a", "b")
                 .build();
-        Assert.assertEquals(expected, jsonParse.map(test));
+        Assert.assertEquals(expected, JsonParse.map(test));
     }
 
     @Test
@@ -53,7 +46,7 @@ public class JsonParseTest {
                 .add("zurb", Double.valueOf("1E-4"))
                 .add("boop", 6L)
                 .build();
-        Assert.assertEquals(expected, jsonParse.map(test));
+        Assert.assertEquals(expected, JsonParse.map(test));
     }
 
     @Test
@@ -64,7 +57,7 @@ public class JsonParseTest {
                 .add("bar", 2L)
                 .add("baz", 3L)
                 .build();
-        Assert.assertEquals(expected, jsonParse.map(test));
+        Assert.assertEquals(expected, JsonParse.map(test));
     }
 
     @Test
@@ -74,7 +67,7 @@ public class JsonParseTest {
                 .add("foo", true)
                 .add("bar", false)
                 .build();
-        Assert.assertEquals(expected, jsonParse.map(test));
+        Assert.assertEquals(expected, JsonParse.map(test));
     }
 
     @Test
@@ -83,7 +76,7 @@ public class JsonParseTest {
         Map<String, Object> expected = MapBuilder.init()
                 .add("foo", null)
                 .build();
-        Assert.assertEquals(expected, jsonParse.map(test));
+        Assert.assertEquals(expected, JsonParse.map(test));
     }
 
     @Test
@@ -92,7 +85,7 @@ public class JsonParseTest {
         Map<String, Object> expected = MapBuilder.init()
                 .add("foo", true)
                 .build();
-        Assert.assertEquals(expected, jsonParse.map(test));
+        Assert.assertEquals(expected, JsonParse.map(test));
     }
 
     @Test
@@ -101,7 +94,7 @@ public class JsonParseTest {
         Map<String, Object> expected = MapBuilder.init()
                 .add("special, foo", "isspecial")
                 .build();
-        Assert.assertEquals(expected, jsonParse.map(test));
+        Assert.assertEquals(expected, JsonParse.map(test));
     }
 
     @Test
@@ -110,7 +103,7 @@ public class JsonParseTest {
         Map<String, Object> expected = MapBuilder.init()
                 .add("specialfoo", "is, special")
                 .build();
-        Assert.assertEquals(expected, jsonParse.map(test));
+        Assert.assertEquals(expected, JsonParse.map(test));
     }
 
     @Test
@@ -119,7 +112,7 @@ public class JsonParseTest {
         Map<String, Object> expected = MapBuilder.init()
                 .add("foo", true)
                 .build();
-        Assert.assertEquals(expected, jsonParse.map(test));
+        Assert.assertEquals(expected, JsonParse.map(test));
     }
 
     @Test
@@ -132,7 +125,7 @@ public class JsonParseTest {
                 .add("false", false)
                 .add("null", null)
                 .build();
-        Assert.assertEquals(expected, jsonParse.map(test));
+        Assert.assertEquals(expected, JsonParse.map(test));
     }
 
     @Test
@@ -141,7 +134,7 @@ public class JsonParseTest {
         Map<String, Object> expected = MapBuilder.init()
                 .add("obj", MapBuilder.init().add("swag", true).build())
                 .build();
-        Assert.assertEquals(expected, jsonParse.map(test));
+        Assert.assertEquals(expected, JsonParse.map(test));
     }
 
     @Test
@@ -150,14 +143,14 @@ public class JsonParseTest {
         Map<String, Object> expected = MapBuilder.init()
                 .add("foo", "{}[]'1234")
                 .build();
-        Assert.assertEquals(expected, jsonParse.map(test));
+        Assert.assertEquals(expected, JsonParse.map(test));
     }
 
     @Test
     public void shouldParseList() {
         String test = "[1, \"foo\", true]";
         List<Object> list = Arrays.<Object>asList(1L, "foo", true);
-        Assert.assertEquals(jsonParse.list(test), list);
+        Assert.assertEquals(JsonParse.list(test), list);
     }
 
     @Test
@@ -169,7 +162,7 @@ public class JsonParseTest {
                         .add("ayy", "lmao").build()
                 )
                 .build();
-        Assert.assertEquals(expected, jsonParse.map(test));
+        Assert.assertEquals(expected, JsonParse.map(test));
     }
 
     @Test
@@ -179,17 +172,17 @@ public class JsonParseTest {
         String noStart = " } ";
 
         try {
-            jsonParse.map(noObject);
+            JsonParse.map(noObject);
             Assert.fail("Did not not throw exception when there was no containing object");
         } catch (Exception ignored) {}
 
         try {
-            jsonParse.map(noEnd);
+            JsonParse.map(noEnd);
             Assert.fail("Did not throw exception when object didn't end");
         } catch (Exception ignored) {}
 
         try {
-            jsonParse.map(noStart);
+            JsonParse.map(noStart);
             Assert.fail("Did not throw exception when object didn't start");
         } catch (Exception ignored) {}
     }
@@ -198,16 +191,16 @@ public class JsonParseTest {
     public void shouldAllowTabsOrNewlines() {
         String test = "\t\n{\t}\n\t";
         Map<String, Object> expected = new HashMap<>();
-        Assert.assertEquals(expected, jsonParse.map(test));
+        Assert.assertEquals(expected, JsonParse.map(test));
     }
 
     @Test
     public void shouldOnlyThrowJsonParseExceptionOnTooManyClosingTags() {
         try {
-            jsonParse.map("{}}");
+            JsonParse.map("{}}");
         } catch (JsonParseException ignored) {}
         try {
-            jsonParse.list("[]]");
+            JsonParse.list("[]]");
         } catch (JsonParseException ignored) {}
     }
 
