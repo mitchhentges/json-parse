@@ -10,12 +10,15 @@ import java.util.*;
  */
 @SuppressWarnings("unchecked") //Because of reusing `currentContainer` for both maps and lists
 public class JsonParse {
+
+    private JsonParse() {}
+
     /**
      * Converts jsonString into a {@link Map}
      * @param jsonString parsed
      * @return the contents of the jsonString
      */
-    public Map<String, Object> map(String jsonString) {
+    public static Map<String, Object> map(String jsonString) {
         return (Map<String, Object>) parse(jsonString, Type.OBJECT);
     }
 
@@ -24,7 +27,7 @@ public class JsonParse {
      * @param jsonString parsed
      * @return the contents of the jsonString
      */
-    public List<Object> list(String jsonString) {
+    public static List<Object> list(String jsonString) {
         return (List<Object>) parse(jsonString, Type.ARRAY);
     }
 

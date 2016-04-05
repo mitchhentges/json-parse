@@ -13,9 +13,8 @@ _Lower is better:_
 String mapString = "{\"fast\":true, \"super-neat\":true}";
 String listString = "[1, 2, false]";
 
-JsonParse parse = new JsonParse();
-Map<String, Object> map = parse.map(mapString);
-List<Object> list = parse.list(listString);
+Map<String, Object> map = JsonParse.map(mapString);
+List<Object> list = JsonParse.list(listString);
 ```
 
 ## Getting the dependency
