@@ -5,7 +5,6 @@ small memory footprint.
 
 _Lower is better:_
 
-![](resources/comparison-nocache.png)
 ![](resources/comparison-cache.png)
 
 ## Usage
