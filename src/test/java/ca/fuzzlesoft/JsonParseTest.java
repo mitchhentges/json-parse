@@ -35,12 +35,34 @@ public class JsonParseTest {
     }
 
     @Test
+    public void shouldParseSingleCharacterStrings() {
+        String test = "{\"a\":\"b\"}";
+        Map<String, Object> expected = MapBuilder.init()
+                .add("a", "b")
+                .build();
+        Assert.assertEquals(expected, jsonParse.map(test));
+    }
+
+    @Test
     public void shouldParseNumbers() {
-        String test = "{\"foo\":1234,\"bar\":-1.1e+1,\"baz\":2.2E-2}";
+        String test = "{\"foo\":1234,\"bar\":-1.1e+1,\"baz\":2.2E-2,\"zurb\":1E-4,\"boop\":6}";
         Map<String, Object> expected = MapBuilder.init()
                 .add("foo", 1234L)
                 .add("bar", Double.valueOf("-1.1e+1"))
                 .add("baz", Double.valueOf("2.2E-2"))
+                .add("zurb", Double.valueOf("1E-4"))
+                .add("boop", 6L)
+                .build();
+        Assert.assertEquals(expected, jsonParse.map(test));
+    }
+
+    @Test
+    public void shouldExcludeCharactersAfterNumbers() {
+        String test = "{\"foo\":1 ,\"bar\":2\t,\"baz\":3\n}";
+        Map<String, Object> expected = MapBuilder.init()
+                .add("foo", 1L)
+                .add("bar", 2L)
+                .add("baz", 3L)
                 .build();
         Assert.assertEquals(expected, jsonParse.map(test));
     }

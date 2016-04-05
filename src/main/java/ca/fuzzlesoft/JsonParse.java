@@ -42,7 +42,7 @@ public class JsonParse {
         typeStack.push(type);
         Type currentType = type;
 
-        boolean expectingComma = false, expectingColon = false, withDecimal = false;
+        boolean expectingComma = false, expectingColon = false;
         int fieldStart = 0, offset, endOffset;
         String propertyName;
 
@@ -67,60 +67,133 @@ public class JsonParse {
 
         char current;
         int i;
-        for (i = offset + 1; i < endOffset; i++) {
+        for (i = offset + 1; i <= endOffset; i++) {
             current = jsonString.charAt(i);
 
             // Have to check if in a value string/name first. If so, ignore any special
             // characters (commas, colons, object literals, etc.)
             if (currentType == Type.STRING) {
-                if (current == '"') {
-                    if (i - 1 >= 0 && jsonString.charAt(i - 1) == '\\') {
-                        continue; //This quotation is escaped
-                    }
+                // Fast-forward to end of string value, which is a '"' character
+                do {
+                    i = jsonString.indexOf('"', i + 1);
+                } while (jsonString.charAt(i - 1) == '\\');
 
-                    Object value = jsonString.substring(fieldStart, i);
-                    if (currentContainer instanceof Map) {
-                        ((Map<String, Object>) currentContainer).put(propertyName, value);
-                    } else {
-                        ((List<Object>) currentContainer).add(value);
-                    }
-                    expectingComma = true;
-                    typeStack.pop();
-                    currentType = typeStack.peek();
+                Object value = jsonString.substring(fieldStart, i);
+                if (currentContainer instanceof Map) {
+                    ((Map<String, Object>) currentContainer).put(propertyName, value);
+                } else {
+                    ((List<Object>) currentContainer).add(value);
                 }
+                expectingComma = true;
+                typeStack.pop();
+                currentType = typeStack.peek();
 
                 continue;
             }
 
             if (currentType == Type.NAME) {
-                if (current == '"') {
-                    if (i - 1 >= 0 && jsonString.charAt(i - 1) == '\\') {
-                        continue; //This quotation is escaped
-                    }
+                // Fast-forward to destination, which is an ending quote
+                do {
+                    i = jsonString.indexOf('"', i + 1);
+                } while (jsonString.charAt(i - 1) == '\\');
 
-                    propertyName = jsonString.substring(fieldStart, i);
-                    typeStack.pop();
-                    typeStack.push(Type.HEURISTIC);
-                    currentType = Type.HEURISTIC;
-                    expectingColon = true;
-                }
+                propertyName = jsonString.substring(fieldStart, i);
+                typeStack.pop();
+                typeStack.push(Type.HEURISTIC);
+                currentType = Type.HEURISTIC;
+                expectingColon = true;
 
                 continue;
             }
 
-            if (Constants.isWhitespace(current)) {
-                if (!checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName, withDecimal)) continue;
+            if (currentType == Type.NUMBER) {
+                boolean withDecimal = false;
+                while (current != ',' && current != '}' && current != ']' && !Constants.isWhitespace(current) && i < endOffset) {
+                    if (!withDecimal && current == '.' || current == 'e' || current == 'E') {
+                        withDecimal = true;
+                    }
+                    current = jsonString.charAt(++i);
+                }
 
-                expectingComma = true;
+                String valueString = jsonString.substring(fieldStart, i);
+                Object value;
+                try {
+                    if (withDecimal) {
+                        value = Double.valueOf(valueString);
+                    } else {
+                        value = Long.valueOf(valueString);
+                    }
+                } catch (NumberFormatException e) {
+                    propertyNameStack.push(propertyName);
+                    throw new JsonParseException(propertyNameStack, "\"" + valueString
+                            + "\" expected to be a number, but wasn't");
+                }
+
+                if (currentContainer instanceof Map) {
+                    ((Map<String, Object>) currentContainer).put(propertyName, value);
+                } else {
+                    ((List<Object>) currentContainer).add(value);
+                }
+
                 typeStack.pop();
                 currentType = typeStack.peek();
-                continue;
+
+                if (Constants.isWhitespace(current)) {
+                    expectingComma = true;
+                    continue;
+                }
+
+                if (current != ']' && current != '}') {
+                    continue;
+                }
+            }
+
+            if (currentType == Type.CONSTANT) {
+                while (current != ',' && current != '}' && current != ']' && !Constants.isWhitespace(current) && i < endOffset) {
+                    current = jsonString.charAt(++i);
+                }
+
+                String valueString = jsonString.substring(fieldStart, i);
+                Object value;
+                if (valueString.equals("false")) {
+                    value = false;
+                } else if (valueString.equals("true")) {
+                    value = true;
+                } else if (valueString.equals("null")) {
+                    value = null;
+                } else {
+                    propertyNameStack.push(propertyName);
+                    throw new JsonParseException(propertyNameStack, "\"" + valueString
+                            + "\" is not a valid constant. Maybe missing quotes?");
+                }
+
+                if (currentContainer instanceof Map) {
+                    ((Map<String, Object>) currentContainer).put(propertyName, value);
+                } else {
+                    ((List<Object>) currentContainer).add(value);
+                }
+
+                typeStack.pop();
+                currentType = typeStack.peek();
+
+                if (Constants.isWhitespace(current)) {
+                    expectingComma = true;
+                    continue;
+                }
+
+                if (current != ']' && current != '}') {
+                    continue;
+                }
             }
 
             // Check ending literals next, because they can act in place of commas or whitespace in terminating a value
             if (current == '}' || current == ']') {
-                if (checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName, withDecimal)) typeStack.pop();
+                if (i == endOffset) {
+                    continue;
+                }
+
                 if (containerStack.isEmpty()) throw new JsonParseException("Too many closing tags");
+
                 Object upperContainer = containerStack.pop();
                 String parentName = propertyNameStack.pop();
                 if (upperContainer instanceof Map) {
@@ -135,40 +208,40 @@ public class JsonParse {
                 continue;
             }
 
-            if (current == ',') {
-                expectingComma = false;
-                if (!checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName, withDecimal)) continue;
+            if (expectingComma) {
+                if (current == ',') {
+                    expectingComma = false;
+                } else if (!Constants.isWhitespace(current)) {
+                    propertyNameStack.push(propertyName);
+                    throw new JsonParseException(propertyNameStack, "wasn't followed by a comma");
+                }
 
-                typeStack.pop();
-                currentType = typeStack.peek();
                 continue;
-            } else if (expectingComma) {
-                propertyNameStack.push(propertyName);
-                throw new JsonParseException(propertyNameStack, "wasn't followed by a comma");
             }
 
             if (expectingColon) {
                 if (current == ':') {
                     expectingColon = false;
-                    continue;
+                } else if (!Constants.isWhitespace(current)) {
+                    propertyNameStack.push(propertyName);
+                    throw new JsonParseException(propertyNameStack, "\"" + propertyName + "\" wasn't followed by a colon");
                 }
 
-                propertyNameStack.push(propertyName);
-                throw new JsonParseException(propertyNameStack, "\"" + propertyName + "\" wasn't followed by a colon");
+                continue;
             }
 
             if (currentType == Type.HEURISTIC) {
-                if (Constants.isNumber(current)) {
-                    typeStack.pop();
-                    typeStack.push(Type.NUMBER);
-                    currentType = Type.NUMBER;
-                    fieldStart = i;
-                    withDecimal = false;
-                } else if (current == '"') {
+                if (current == '"') {
                     typeStack.pop();
                     typeStack.push(Type.STRING);
                     currentType = Type.STRING;
                     fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
+                } else if (Constants.isLetter(current)) {
+                    // Assume parsing a constant ("null", "true", "false", etc)
+                    typeStack.pop();
+                    typeStack.push(Type.CONSTANT);
+                    currentType = Type.CONSTANT;
+                    fieldStart = i;
                 } else if (current == '{') {
                     typeStack.pop();
                     typeStack.push(Type.OBJECT);
@@ -184,42 +257,11 @@ public class JsonParse {
                     containerStack.push(currentContainer);
                     currentContainer = new ArrayList<>();
                     propertyName = "[]";
-                } else {
-                    // Assume parsing a constant ("null", "true", "false", etc)
+                } else if (!Constants.isWhitespace(current)) {
+                    // Is a number
                     typeStack.pop();
-                    typeStack.push(Type.CONSTANT);
-                    currentType = Type.CONSTANT;
-                    fieldStart = i;
-                }
-
-                continue;
-            }
-
-            if (currentType == Type.ARRAY) {
-                if (Constants.isNumber(current)) {
                     typeStack.push(Type.NUMBER);
                     currentType = Type.NUMBER;
-                    fieldStart = i;
-                    withDecimal = false;
-                } else if (current == '"') {
-                    typeStack.push(Type.STRING);
-                    currentType = Type.STRING;
-                    fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
-                } else if (current == '{') {
-                    typeStack.push(Type.OBJECT);
-                    currentType = Type.OBJECT;
-                    propertyNameStack.push(propertyName);
-                    containerStack.push(currentContainer);
-                    currentContainer = new HashMap<>();
-                } else if (current == '[') {
-                    typeStack.push(Type.ARRAY);
-                    currentType = Type.ARRAY;
-                    propertyNameStack.push(propertyName);
-                    containerStack.push(currentContainer);
-                    currentContainer = new ArrayList<>();
-                } else {
-                    typeStack.push(Type.CONSTANT);
-                    currentType = Type.CONSTANT;
                     fieldStart = i;
                 }
 
@@ -232,70 +274,46 @@ public class JsonParse {
                     currentType = Type.NAME;
                     fieldStart = i + 1; // Don't start with `current`, as it is the beginning quotation
                     continue;
+                } else if (Constants.isWhitespace(current)) {
+                    continue;
                 }
 
                 throw new JsonParseException(propertyNameStack,
                         "unexpected character '" + current + "' where a property name is expected");
             }
 
-            if (current == '.') {
-                withDecimal = true;
-            }
-        }
-
-        checkValueTermination(propertyNameStack, currentContainer, jsonString, fieldStart, i, currentType, propertyName, withDecimal);
-        return currentContainer;
-    }
-
-    /**
-     * Handles the potential completion of a "section" (property name or value), returning true if a section was just
-     * completed (e.g. this is called on the space after a number, completing the number)
-     * @return true if section termination just occurred, false otherwise
-     */
-    private static boolean checkValueTermination(Stack<String> propertyNameStack, Object currentContainer,
-                                                 String jsonString, int fieldStart, int fieldEnd, Type currentType,
-                                                 String propertyName, boolean withDecimal) {
-
-        if (currentType != Type.NUMBER && currentType != Type.CONSTANT) {
-            return false;
-        }
-
-        String valueString = jsonString.substring(fieldStart, fieldEnd);
-        Object value;
-        if (currentType == Type.NUMBER) {
-            try {
-                if (withDecimal) {
-                    value = Double.valueOf(valueString);
-                } else {
-                    value = Long.valueOf(valueString);
+            if (currentType == Type.ARRAY) {
+                if (current == '"') {
+                    typeStack.push(Type.STRING);
+                    currentType = Type.STRING;
+                    fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
+                } else if (Constants.isLetter(current)){
+                    // Assume parsing a constant ("null", "true", "false", etc)
+                    typeStack.push(Type.CONSTANT);
+                    currentType = Type.CONSTANT;
+                    fieldStart = i;
+                } else if (current == '{') {
+                    typeStack.push(Type.OBJECT);
+                    currentType = Type.OBJECT;
+                    propertyNameStack.push(propertyName);
+                    containerStack.push(currentContainer);
+                    currentContainer = new HashMap<>();
+                } else if (current == '[') {
+                    typeStack.push(Type.ARRAY);
+                    currentType = Type.ARRAY;
+                    propertyNameStack.push(propertyName);
+                    containerStack.push(currentContainer);
+                    currentContainer = new ArrayList<>();
+                } else if (!Constants.isWhitespace(current)) {
+                    // Is a number
+                    typeStack.push(Type.NUMBER);
+                    currentType = Type.NUMBER;
+                    fieldStart = i;
                 }
-            } catch (NumberFormatException e) {
-                propertyNameStack.push(propertyName);
-                throw new JsonParseException(propertyNameStack, "\"" + valueString
-                        + "\" expected to be a number, but wasn't");
-            }
-        } else {
-            // Type is CONSTANT
-            if (valueString.equals("false")) {
-                value = false;
-            } else if (valueString.equals("true")) {
-                value = true;
-            } else if (valueString.equals("null")) {
-                value = null;
-            } else {
-                propertyNameStack.push(propertyName);
-                throw new JsonParseException(propertyNameStack, "\"" + valueString
-                        + "\" is not a valid constant. Maybe missing quotes?");
             }
         }
 
-        if (currentContainer instanceof Map) {
-            ((Map<String, Object>) currentContainer).put(propertyName, value);
-        } else {
-            ((List<Object>) currentContainer).add(value);
-        }
-
-        return true;
+        return currentContainer;
     }
 
     enum Type {
