@@ -7,6 +7,8 @@ _Lower is better:_
 
 ![](resources/comparison.png)
 
+[Wiki page explaining source of results](https://github.com/mitchhentges/json-parse/wiki/Comparison-with-FasterXML-Jackson)
+
 ## Usage
 
 ```
