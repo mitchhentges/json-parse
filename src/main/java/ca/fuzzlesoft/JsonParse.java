@@ -115,7 +115,8 @@ public class JsonParse {
                     }
                 } catch (NumberFormatException e) {
                     propertyNameStack.push(propertyName);
-                    throw new JsonParseException(propertyNameStack, "\"" + valueString
+                    containerStack.push(currentContainer);
+                    throw new JsonParseException(propertyNameStack, containerStack, "\"" + valueString
                             + "\" expected to be a number, but wasn't");
                 }
 
@@ -155,7 +156,8 @@ public class JsonParse {
                     value = null;
                 } else {
                     propertyNameStack.push(propertyName);
-                    throw new JsonParseException(propertyNameStack, "\"" + valueString
+                    containerStack.push(currentContainer);
+                    throw new JsonParseException(propertyNameStack, containerStack, "\"" + valueString
                             + "\" is not a valid constant. Missing quotes?");
                 }
 
@@ -249,7 +251,12 @@ public class JsonParse {
                     expectingComma = false;
                 } else if (!Constants.isWhitespace(current)) {
                     propertyNameStack.push(propertyName);
-                    throw new JsonParseException(propertyNameStack, "wasn't followed by a comma");
+                    containerStack.push(currentContainer);
+
+                    // Need to hack around the way that list size is increased_before comma, but propertyName is
+                    // not updated until after comma. This affects the way that the JSON trace is constructed
+                    String message = currentType == Type.ARRAY ? "wasn't preceded by a comma" : "wasn't followed by a comma";
+                    throw new JsonParseException(propertyNameStack, containerStack, message);
                 }
 
                 continue;
@@ -260,7 +267,9 @@ public class JsonParse {
                     expectingColon = false;
                 } else if (!Constants.isWhitespace(current)) {
                     propertyNameStack.push(propertyName);
-                    throw new JsonParseException(propertyNameStack, "\"" + propertyName + "\" wasn't followed by a colon");
+                    containerStack.push(currentContainer);
+                    throw new JsonParseException(propertyNameStack, containerStack,
+                            "\"" + propertyName + "\" wasn't followed by a colon");
                 }
 
                 continue;
@@ -314,7 +323,7 @@ public class JsonParse {
                     continue;
                 }
 
-                throw new JsonParseException(propertyNameStack,
+                throw new JsonParseException(propertyNameStack, containerStack,
                         "unexpected character '" + current + "' where a property name is expected. Missing quotes?");
             }
 

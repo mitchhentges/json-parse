@@ -54,9 +54,8 @@ outer.no-colon: "no-colon" wasn't followed by a colon
 {"object": {no-quotes: true}}
 object: unexpected character 'n' where a property name is expected. Missing quotes?
 
-{"outer": {"sick-list": [{}, {"inner": fasle}]}}
-outer.sick-list.[].inner: "fasle" is not a valid constant. Missing quotes?
-# Showing the array index of the invalid JSON isn't yet supported
+{"outer": {"sick-list": [{}, {"inner": [1, [1, 2, 3, [fasle]]]}]}}
+outer.sick-list.[1].inner.[1].[3].[0]: "fasle" is not a valid constant. Missing quotes?
 ```
 
 
@@ -126,11 +125,6 @@ Map<String, Object> map = JsonParse.map(mapString);
 
 Unfortunately not. JSON doesn't have any type information, so explicit knowledge is required before JSON can be
 converted. This is the job of a "binding framework"
-
-* Why do my JSON traces show "[]" for array elements, rather than their index?
-
-Since efficiency is a primary goal of this project, array indices could not be added to JSON traces. It would
-cost some performance, and that's not worth it ;)
 
 * Why is the code squashed so much?
 
