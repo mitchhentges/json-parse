@@ -167,7 +167,7 @@ public class JsonParse {
                 } else {
                     propertyNameStack.push(propertyName);
                     throw new JsonParseException(propertyNameStack, "\"" + valueString
-                            + "\" is not a valid constant. Maybe missing quotes?");
+                            + "\" is not a valid constant. Missing quotes?");
                 }
 
                 if (currentContainer instanceof Map) {
@@ -282,7 +282,7 @@ public class JsonParse {
                 }
 
                 throw new JsonParseException(propertyNameStack,
-                        "unexpected character '" + current + "' where a property name is expected");
+                        "unexpected character '" + current + "' where a property name is expected. Missing quotes?");
             }
 
             if (currentType == Type.ARRAY) {
