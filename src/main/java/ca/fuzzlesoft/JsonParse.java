@@ -128,7 +128,7 @@ public class JsonParse {
                     }
                 } catch (NumberFormatException e) {
                     propertyNameStack.push(propertyName);
-                    throw new JsonParseException(propertyNameStack, "\"" + valueString
+                    throw new JsonParseException(propertyNameStack, containerStack, "\"" + valueString
                             + "\" expected to be a number, but wasn't");
                 }
 
@@ -166,7 +166,7 @@ public class JsonParse {
                     value = null;
                 } else {
                     propertyNameStack.push(propertyName);
-                    throw new JsonParseException(propertyNameStack, "\"" + valueString
+                    throw new JsonParseException(propertyNameStack, containerStack, "\"" + valueString
                             + "\" is not a valid constant. Missing quotes?");
                 }
 
@@ -216,7 +216,7 @@ public class JsonParse {
                     expectingComma = false;
                 } else if (!Constants.isWhitespace(current)) {
                     propertyNameStack.push(propertyName);
-                    throw new JsonParseException(propertyNameStack, "wasn't followed by a comma");
+                    throw new JsonParseException(propertyNameStack, containerStack, "wasn't followed by a comma");
                 }
 
                 continue;
@@ -227,7 +227,8 @@ public class JsonParse {
                     expectingColon = false;
                 } else if (!Constants.isWhitespace(current)) {
                     propertyNameStack.push(propertyName);
-                    throw new JsonParseException(propertyNameStack, "\"" + propertyName + "\" wasn't followed by a colon");
+                    throw new JsonParseException(propertyNameStack, containerStack,
+                            "\"" + propertyName + "\" wasn't followed by a colon");
                 }
 
                 continue;
@@ -281,7 +282,7 @@ public class JsonParse {
                     continue;
                 }
 
-                throw new JsonParseException(propertyNameStack,
+                throw new JsonParseException(propertyNameStack, containerStack,
                         "unexpected character '" + current + "' where a property name is expected. Missing quotes?");
             }
 
