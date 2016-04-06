@@ -19,7 +19,7 @@ public class JsonParse {
      * @return the contents of the jsonString
      */
     public static Map<String, Object> map(String jsonString) {
-        return (Map<String, Object>) parse(jsonString, Type.OBJECT);
+        return (Map<String, Object>) parse(jsonString);
     }
 
     /**
@@ -28,17 +28,16 @@ public class JsonParse {
      * @return the contents of the jsonString
      */
     public static List<Object> list(String jsonString) {
-        return (List<Object>) parse(jsonString, Type.ARRAY);
+        return (List<Object>) parse(jsonString);
     }
 
     /**
      * Parses jsonString according to what the outermost structure is
      * @param jsonString parsed
-     * @param type type of outermost structure, expecting {@link Type#OBJECT} or {@link Type#ARRAY}
      * @return the contents of jsonString
      */
     @SuppressWarnings("ConstantConditions")
-    public static Object parse(String jsonString, Type type) {
+    public static Object parse(String jsonString) {
         Stack<String> propertyNameStack = new Stack<>();
         Stack<Object> containerStack = new Stack<>();
         Stack<Type> typeStack = new Stack<>();
@@ -99,11 +98,11 @@ public class JsonParse {
 
             if (currentType == Type.NUMBER) {
                 boolean withDecimal = false;
-                while (current != ',' && current != '}' && current != ']' && !Constants.isWhitespace(current) && i < end) {
+                while (current != ',' && current != '}' && current != ']' && !Constants.isWhitespace(current) && i++ < end) {
                     if (!withDecimal && current == '.' || current == 'e' || current == 'E') {
                         withDecimal = true;
                     }
-                    current = jsonString.charAt(++i);
+                    current = jsonString.charAt(i);
                 }
 
                 String valueString = jsonString.substring(fieldStart, i);
@@ -143,8 +142,8 @@ public class JsonParse {
             }
 
             if (currentType == Type.CONSTANT) {
-                while (current != ',' && current != '}' && current != ']' && !Constants.isWhitespace(current) && i < end) {
-                    current = jsonString.charAt(++i);
+                while (current != ',' && current != '}' && current != ']' && !Constants.isWhitespace(current) && i++ < end) {
+                    current = jsonString.charAt(i);
                 }
 
                 String valueString = jsonString.substring(fieldStart, i);
