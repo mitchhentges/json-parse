@@ -186,8 +186,8 @@ public class JsonParse {
                     // The "outside" value has been found.
                     // Fast-forward to the end of the string, make sure that there's no extra characters
 
-                    while (i < end) {
-                        current = jsonString.charAt(++i);
+                    while (i <= end) {
+                        current = jsonString.charAt(i++);
                         if (!Constants.isWhitespace(current)) {
                             throw new JsonParseException("Unexpected character \"" + current + "\" found after root element");
                         }
