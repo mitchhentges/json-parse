@@ -54,7 +54,7 @@ outer.no-colon: "no-colon" wasn't followed by a colon
 {"object": {no-quotes: true}}
 object: unexpected character 'n' where a property name is expected. Missing quotes?
 
-{"outer": {"sick-list": [{}, {"inner": fasle]}}
+{"outer": {"sick-list": [{}, {"inner": fasle}]}}
 outer.sick-list.[].inner: "fasle" is not a valid constant. Missing quotes?
 # Showing the array index of the invalid JSON isn't yet supported
 ```
