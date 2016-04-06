@@ -62,7 +62,7 @@ outer.sick-list.[].inner: "fasle" is not a valid constant. Missing quotes?
 
 ### Thread safe
 
-Can be used from multiple thread contexts without losing data integrity for failing.
+Can be used from multiple thread contexts without losing data integrity or failing.
 
 ```
 public static void main(String[] args) throws InterruptedException {
