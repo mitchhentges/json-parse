@@ -37,8 +37,32 @@ compile 'ca.fuzzlesoft:json-parse:1.2.0'
 
 ## Features
 
-### Throw exceptions with helpful messages with trace to error, e.g. 'a.b.c: "fasle" is an invalid value'
+### Shows path to syntax error if given invalid JSON
+
+If incorrect JSON is passed to `JsonParse`, the thrown exception will explain _where_ the JSON is invalid.
+
+```
+{"outer": {"inner": {"a": true, "b": nulll}}}
+outer.inner.b: "nulll" is not a valid constant. Missing quotes?
+
+{"outer": {"inner": {"a": true "b": false}}}
+outer.inner.a: wasn't followed by a comma
+
+{"outer": {"no-colon" true}}
+outer.no-colon: "no-colon" wasn't followed by a colon
+
+{"object": {no-quotes: true}}
+object: unexpected character 'n' where a property name is expected. Missing quotes?
+
+{"outer": {"sick-list": [{}, {"inner": fasle]}}
+outer.sick-list.[].inner: "fasle" is not a valid constant. Missing quotes?
+# Showing the array index of the invalid JSON isn't yet supported
+```
+
+
 ### Thread safe
+
+Can be used from multiple thread contexts without losing data integrity for failing.
 
 ```
 public static void main(String[] args) throws InterruptedException {
@@ -79,7 +103,22 @@ public static void main(String[] args) throws InterruptedException {
 ```
 
 ### Convert a JSON string to a Java `List<Object>`
+
+Can convert JSON arrays.
+
+```
+String listString = "[1, 2, false]";
+List<Object> list = JsonParse.list(listString);
+```
+
 ### Convert a JSON string to a Java `Map<String, Object>`
+
+Can convert JSON objects.
+
+```
+String mapString = "{\"fast\":true, \"super-neat\":true}";
+Map<String, Object> map = JsonParse.map(mapString);
+```
 
 ## FAQ
 
