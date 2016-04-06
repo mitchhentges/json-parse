@@ -19,7 +19,7 @@ public class JsonParse {
      * @return the contents of the jsonString
      */
     public static Map<String, Object> map(String jsonString) {
-        return (Map<String, Object>) parse(jsonString, Type.OBJECT);
+        return (Map<String, Object>) parse(jsonString);
     }
 
     /**
@@ -28,7 +28,7 @@ public class JsonParse {
      * @return the contents of the jsonString
      */
     public static List<Object> list(String jsonString) {
-        return (List<Object>) parse(jsonString, Type.ARRAY);
+        return (List<Object>) parse(jsonString);
     }
 
     /**
@@ -38,7 +38,7 @@ public class JsonParse {
      * @return the contents of jsonString
      */
     @SuppressWarnings("ConstantConditions")
-    public static Object parse(String jsonString, Type type) {
+    public static Object parse(String jsonString) {
         Stack<String> propertyNameStack = new Stack<>();
         Stack<Object> containerStack = new Stack<>();
         Stack<Type> typeStack = new Stack<>();

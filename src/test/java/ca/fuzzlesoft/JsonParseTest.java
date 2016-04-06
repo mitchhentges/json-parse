@@ -223,18 +223,14 @@ public class JsonParseTest {
      */
     @Test
     public void shouldUseSquareBracketsForFormattingErrorsInArrays() {
-        assertFormatting(Type.ARRAY, "[true, false false]", "[]: wasn't followed by a comma");
-        assertFormatting(Type.ARRAY, "[v]", "[]: \"v\" is not a valid constant. Missing quotes?");
+        assertFormatting("[true, false false]", "[]: wasn't followed by a comma");
+        assertFormatting("[v]", "[]: \"v\" is not a valid constant. Missing quotes?");
         assertFormatting("{\"a\": [{v}]", "a.[]: unexpected character 'v' where a property name is expected. Missing quotes?");
     }
 
     private void assertFormatting(String test, String expected) {
-        assertFormatting(Type.OBJECT, test, expected);
-    }
-
-    private void assertFormatting(Type type, String test, String expected) {
         try {
-            JsonParse.parse(test, type);
+            JsonParse.parse(test);
         } catch (JsonParseException e) {
             Assert.assertEquals(expected, e.getMessage());
         }
