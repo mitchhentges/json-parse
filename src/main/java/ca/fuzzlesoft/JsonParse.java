@@ -41,18 +41,53 @@ public class JsonParse {
         Stack<String> propertyNameStack = new Stack<>();
         Stack<Object> containerStack = new Stack<>();
         Stack<Type> typeStack = new Stack<>();
-        typeStack.push(Type.INITIAL);
-        Type currentType = Type.INITIAL;
+        Type currentType;
 
         boolean done = false, expectingComma = false, expectingColon = false;
-        int fieldStart = 0, end = jsonString.length() - 1;
+        int fieldStart = 0, end = jsonString.length() - 1, i = 0;
         String propertyName = null;
         Object currentContainer = null;
         Object output = null;
         Object value;
-
-        int i = 0;
         char current;
+
+        while (Constants.isWhitespace((current = jsonString.charAt(i)))) {
+            if (i >= end) {
+                throw new JsonParseException("Provided string did not contain a value");
+            }
+            i++;
+        }
+
+        if (current == '{') {
+            typeStack.push(Type.OBJECT);
+            currentType = Type.OBJECT;
+            currentContainer = new HashMap<>();
+            i++;
+        } else if (current == '[') {
+            typeStack.push(Type.ARRAY);
+            currentType = Type.ARRAY;
+            currentContainer = new ArrayList<>();
+            propertyName = "[]";
+            i++;
+        } else if (current == '"') {
+            typeStack.push(Type.STRING);
+            currentType = Type.STRING;
+            fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
+            i++;
+        } else if (Constants.isLetter(current)) {
+            // Assume parsing a constant ("null", "true", "false", etc)
+            typeStack.push(Type.CONSTANT);
+            currentType = Type.CONSTANT;
+            fieldStart = i;
+        } else if (Constants.isNumberStart(current)) {
+            typeStack.push(Type.NUMBER);
+            currentType = Type.NUMBER;
+            fieldStart = i;
+        } else {
+            throw new JsonParseException(propertyNameStack, containerStack,
+                    "Unexpected character \"" + current + "\" instead of root value");
+        }
+
         while (!done && i <= end) {
             current = jsonString.charAt(i);
             switch (currentType) {
@@ -96,7 +131,7 @@ public class JsonParse {
                     break;
                 case NUMBER: {
                     boolean withDecimal = false;
-                    while (current != ',' && current != '}' && current != ']' && !Constants.isWhitespace(current) && i++ < end) {
+                    while (Constants.isNumber(current) && i++ < end) {
                         if (!withDecimal && current == '.' || current == 'e' || current == 'E') {
                             withDecimal = true;
                         }
@@ -136,7 +171,7 @@ public class JsonParse {
                     break;
                 }
                 case CONSTANT: {
-                    while (current != ',' && current != '}' && current != ']' && !Constants.isWhitespace(current) && i++ < end) {
+                    while (Constants.isLetter(current) && i++ < end) {
                         current = jsonString.charAt(i);
                     }
 
@@ -177,46 +212,6 @@ public class JsonParse {
                     }
                     break;
                 }
-                case INITIAL:
-                    while (Constants.isWhitespace(current) && i++ < end) {
-                        current = jsonString.charAt(i);
-                    }
-
-                    if (current == '"') {
-                        typeStack.pop();
-                        typeStack.push(Type.STRING);
-                        currentType = Type.STRING;
-                        fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
-                        i++;
-                    } else if (current == '{') {
-                        typeStack.pop();
-                        typeStack.push(Type.OBJECT);
-                        currentType = Type.OBJECT;
-                        currentContainer = new HashMap<>();
-                        i++;
-                    } else if (current == '[') {
-                        typeStack.pop();
-                        typeStack.push(Type.ARRAY);
-                        currentType = Type.ARRAY;
-                        currentContainer = new ArrayList<>();
-                        propertyName = "[]";
-                        i++;
-                    } else if (Constants.isLetter(current)) {
-                        // Assume parsing a constant ("null", "true", "false", etc)
-                        typeStack.pop();
-                        typeStack.push(Type.CONSTANT);
-                        currentType = Type.CONSTANT;
-                        fieldStart = i;
-                    } else if (Constants.isNumberStart(current)) {
-                        typeStack.pop();
-                        typeStack.push(Type.NUMBER);
-                        currentType = Type.NUMBER;
-                        fieldStart = i;
-                    } else {
-                        throw new JsonParseException(propertyNameStack, containerStack,
-                                "Unexpected character \"" + current + "\" instead of root value");
-                    }
-                    break;
                 case HEURISTIC:
                     while (Constants.isWhitespace(current) && i++ < end) {
                         current = jsonString.charAt(i);
@@ -407,8 +402,8 @@ public class JsonParse {
             }
         }
 
-        if (output == null) {
-            throw new JsonParseException("Provided string did not contain a value");
+        if (!done) {
+            throw new JsonParseException("Root element wasn't terminated correctly (Missing ']' or '}'?)");
         }
 
         while (++i <= end) {
@@ -422,7 +417,6 @@ public class JsonParse {
     }
 
     enum Type {
-        INITIAL,
         ARRAY,
         OBJECT,
         HEURISTIC,
