@@ -170,7 +170,7 @@ public class JsonParse {
                     }
                     break;
                 }
-                case CONSTANT: {
+                case CONSTANT:
                     while (Constants.isLetter(current) && i++ < end) {
                         current = jsonString.charAt(i);
                     }
@@ -211,7 +211,6 @@ public class JsonParse {
                         }
                     }
                     break;
-                }
                 case HEURISTIC:
                     while (Constants.isWhitespace(current) && i++ < end) {
                         current = jsonString.charAt(i);
