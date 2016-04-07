@@ -207,6 +207,24 @@ public class JsonParseTest {
     }
 
     @Test
+    public void shouldTestIndividualStrings() {
+        Assert.assertEquals("foo", JsonParse.string("\n\t\"foo\"  "));
+        Assert.assertEquals(null, JsonParse.string("\n\tnull  "));
+    }
+
+    @Test
+    public void shouldTestIndividualNumbers() {
+        Assert.assertEquals(1234L, JsonParse.number("\n\t1234  "));
+        Assert.assertEquals(Double.valueOf("-13.3e+7"), JsonParse.number("\n\t-13.3e+7  "));
+    }
+
+    @Test
+    public void shouldTestIndividualBooleans() {
+        Assert.assertEquals(true, JsonParse.bool("\n\ttrue  "));
+        Assert.assertEquals(false, JsonParse.bool("\n\tfalse  "));
+    }
+
+    @Test
     public void shouldFormatExceptionsWithJsonStack() {
         assertFormatting("{\"a\":{\"b\":{\"c\": fasle}}}", "a.b.c: \"fasle\" is not a valid constant. Missing quotes?");
         assertFormatting("{\"a\":true \"b\":false}", "a: wasn't followed by a comma");

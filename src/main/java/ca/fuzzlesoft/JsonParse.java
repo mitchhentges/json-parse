@@ -31,6 +31,18 @@ public class JsonParse {
         return (List<Object>) parse(jsonString);
     }
 
+    public static String string(String jsonString) {
+        return (String) parse(jsonString);
+    }
+
+    public static Number number(String jsonString) {
+        return (Number) parse(jsonString);
+    }
+
+    public static boolean bool(String jsonString) {
+        return (boolean) parse(jsonString);
+    }
+
     /**
      * Parses jsonString according to what the outermost structure is
      * @param jsonString parsed

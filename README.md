@@ -14,9 +14,15 @@ _Lower is better:_
 ```
 String mapString = "{\"fast\":true, \"super-neat\":true}";
 String listString = "[1, 2, false]";
+String stringString = "\"yo dawg\"";
+String numberString = "-1.2e-3";
+String boolString = "true";
 
 Map<String, Object> map = JsonParse.map(mapString);
 List<Object> list = JsonParse.list(listString);
+String string = JsonParse.string(stringString);
+Number number = JsonParse.number(numberString);
+Boolean bool = JsonParse.bool(boolString);
 ```
 
 ## Getting the dependency
@@ -26,13 +32,13 @@ List<Object> list = JsonParse.list(listString);
 <dependency>
     <groupId>ca.fuzzlesoft</groupId>
     <artifactId>json-parse</artifactId>
-    <version>1.2.0</version>
+    <version>1.3.0</version>
 </dependency>
 ```
 
 **Gradle**
 ```
-compile 'ca.fuzzlesoft:json-parse:1.2.0'
+compile 'ca.fuzzlesoft:json-parse:1.3.0'
 ```
 
 ## Features

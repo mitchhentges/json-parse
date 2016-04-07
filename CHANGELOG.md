@@ -1,3 +1,12 @@
+# 1.3.0
+
+Performance and array-index-trace release
+
+* Array index is now shown in JSON traces. [0] is the first element, [1] is the second, and so on
+* Can now parse strings, numbers and constants as the root element. It doesn't have to be an array or object anymore
+* More internal consistency in the way root objects are handled
+* Performance increased by at least 25% (only one stack is used for managing state)
+
 # 1.2.0
 
 * `list()` and `map()` are now static methods. Building an object is no longer necessary
