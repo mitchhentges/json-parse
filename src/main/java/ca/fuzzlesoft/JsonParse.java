@@ -76,7 +76,7 @@ public class JsonParse {
                     output = jsonString.substring(fieldStart, i);
                     typeStack.pop();
                     currentType = Type.DONE;
-                    current = jsonString.charAt(i++);
+                    i++;
                     break;
                 case OBJECT_STRING: {
                     // Fast-forward to end of string value, which is a '"' character
@@ -90,7 +90,7 @@ public class JsonParse {
 
                     typeStack.pop();
                     currentType = Type.OBJECT;
-                    current = jsonString.charAt(i++);
+                    i++;
                     break;
                 }
                 case ARRAY_STRING: {
@@ -105,7 +105,7 @@ public class JsonParse {
 
                     typeStack.pop();
                     currentType = Type.ARRAY;
-                    current = jsonString.charAt(i++);
+                    i++;
                     break;
                 }
                 case NUMBER: {
