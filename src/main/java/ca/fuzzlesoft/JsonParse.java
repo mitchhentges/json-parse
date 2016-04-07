@@ -44,15 +44,16 @@ public class JsonParse {
         typeStack.push(Type.INITIAL);
         Type currentType = Type.INITIAL;
 
-        boolean expectingComma = false, expectingColon = false;
+        boolean done = false, expectingComma = false, expectingColon = false;
         int fieldStart = 0, end = jsonString.length() - 1;
         String propertyName = null;
         Object currentContainer = null;
         Object output = null;
 
         int i = 0;
-        while (i <= end) {
-            char current = jsonString.charAt(i);
+        char current;
+        while (!done && i <= end) {
+            current = jsonString.charAt(i);
             switch (currentType) {
                 case NAME:
                     // Fast-forward to destination, which is an ending quote
@@ -74,8 +75,7 @@ public class JsonParse {
                     } while (jsonString.charAt(i - 1) == '\\');
 
                     output = jsonString.substring(fieldStart, i);
-                    typeStack.pop();
-                    currentType = Type.DONE;
+                    done = true;
                     i++;
                     break;
                 case OBJECT_STRING: {
@@ -133,8 +133,7 @@ public class JsonParse {
                     }
 
                     output = value;
-                    typeStack.pop();
-                    currentType = Type.DONE;
+                    done = true;
                     break;
                 }
                 case OBJECT_NUMBER: {
@@ -222,8 +221,7 @@ public class JsonParse {
                                     + "\" is not a valid constant. Missing quotes?");
                     }
 
-                    typeStack.pop();
-                    currentType = Type.DONE;
+                    done = true;
                     break;
                 }
                 case OBJECT_CONSTANT: {
@@ -288,19 +286,6 @@ public class JsonParse {
 
                     break;
                 }
-                case DONE:
-                    while (true) {
-                        if (!Constants.isWhitespace(current)) {
-                            throw new JsonParseException("Unexpected character \"" + current + "\" found after root element");
-                        }
-                        i++;
-                        if (i >= end) {
-                            break;
-                        }
-                        current = jsonString.charAt(i);
-                    }
-
-                    return output;
                 case INITIAL:
                     while (Constants.isWhitespace(current) && i++ < end) {
                         current = jsonString.charAt(i);
@@ -429,7 +414,6 @@ public class JsonParse {
                         fieldStart = i + 1; // Don't start with `current`, as it is the beginning quotation
                         i++;
                     } else if (current == '}') {
-                        typeStack.pop();
                         if (!containerStack.isEmpty()) {
                             Object upperContainer = containerStack.pop();
                             String parentName = propertyNameStack.pop();
@@ -441,13 +425,13 @@ public class JsonParse {
                             }
                             currentContainer = upperContainer;
                             expectingComma = true;
+                            typeStack.pop();
                             currentType = typeStack.peek();
+                            i++;
                         } else {
                             output = currentContainer;
-                            currentType = Type.DONE;
+                            done = true;
                         }
-
-                        i++;
                     } else if (!Constants.isWhitespace(current)) {
                         throw new JsonParseException(propertyNameStack, containerStack,
                                 "unexpected character '" + current + "' where a property name is expected. Missing quotes?");
@@ -479,7 +463,6 @@ public class JsonParse {
                         typeStack.push(Type.ARRAY_STRING);
                         currentType = Type.ARRAY_STRING;
                         fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
-                        // TODO remove fieldStart
                         i++;
                     } else if (current == '{') {
                         typeStack.push(Type.OBJECT);
@@ -496,7 +479,6 @@ public class JsonParse {
                         currentContainer = new ArrayList<>();
                         i++;
                     } else if (current == ']') {
-                        typeStack.pop();
                         if (!containerStack.isEmpty()) {
                             Object upperContainer = containerStack.pop();
                             String parentName = propertyNameStack.pop();
@@ -508,13 +490,13 @@ public class JsonParse {
                             }
                             currentContainer = upperContainer;
                             expectingComma = true;
+                            typeStack.pop();
                             currentType = typeStack.peek();
+                            i++;
                         } else {
                             output = currentContainer;
-                            currentType = Type.DONE;
+                            done = true;
                         }
-
-                        i++;
                     } else if (Constants.isLetter(current)) {
                         // Assume parsing a constant ("null", "true", "false", etc)
                         typeStack.push(Type.ARRAY_CONSTANT);
@@ -538,12 +520,18 @@ public class JsonParse {
             throw new JsonParseException("Provided string did not contain a value");
         }
 
+        while (++i <= end) {
+            current = jsonString.charAt(i);
+            if (!Constants.isWhitespace(current)) {
+                throw new JsonParseException("Unexpected character \"" + current + "\" found after root element");
+            }
+        }
+
         return output;
     }
 
     enum Type {
         INITIAL,
-        DONE,
         ARRAY,
         OBJECT,
         HEURISTIC,
