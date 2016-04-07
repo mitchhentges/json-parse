@@ -333,7 +333,7 @@ public class JsonParse {
                         current = jsonString.charAt(i);
                     }
 
-                    if (current != ',' && current != ']' && expectingComma) {
+                    if (current != ',' && current != ']' && current != '}' && expectingComma) {
                         propertyNameStack.push(propertyName);
                         containerStack.push(currentContainer);
                         throw new JsonParseException(propertyNameStack, containerStack,
