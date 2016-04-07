@@ -1,5 +1,7 @@
 package ca.fuzzlesoft;
 
+import ca.fuzzlesoft.JsonParse.State;
+
 import java.util.List;
 import java.util.Stack;
 
@@ -15,16 +17,16 @@ public class JsonParseException extends RuntimeException {
         this.message = message;
     }
 
-    public JsonParseException(Stack<String> propertyStack, Stack<Object> containerStack, String message) {
+    public JsonParseException(Stack<State> stateStack, String message) {
         String jsonTrace = "";
-        for (int i = 0; i < propertyStack.size(); i++) {
-            String name = propertyStack.get(i);
+        for (int i = 0; i < stateStack.size(); i++) {
+            String name = stateStack.get(i).propertyName;
             if (name.equals("[]")) {
                 // Fill in array index
-                List<Object> list = (List<Object>) containerStack.get(i);
+                List<Object> list = (List<Object>) stateStack.get(i).container;
                 name = String.format("[%d]", list.size());
             }
-            jsonTrace += name + (i != propertyStack.size() - 1 ? "." : "");
+            jsonTrace += name + (i != stateStack.size() - 1 ? "." : "");
         }
 
         jsonTrace = jsonTrace.equals("") ? "<root>" : jsonTrace;

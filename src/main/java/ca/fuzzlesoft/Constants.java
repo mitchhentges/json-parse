@@ -14,4 +14,12 @@ public class Constants {
     public static boolean isLetter(char c) {
         return c >= 'a' && c <= 'z';
     }
+
+    public static boolean isNumberStart(char c) {
+        return (c >= '0' && c <= '9') || c == '-';
+    }
+
+    public static boolean isNumber(char c) {
+        return isNumberStart(c) || c == '+' || c == 'e' || c == 'E' || c == '.';
+    }
 }
