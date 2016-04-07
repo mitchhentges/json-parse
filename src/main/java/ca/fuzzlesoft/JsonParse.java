@@ -49,6 +49,7 @@ public class JsonParse {
         String propertyName = null;
         Object currentContainer = null;
         Object output = null;
+        Object value;
 
         int i = 0;
         char current;
@@ -74,43 +75,28 @@ public class JsonParse {
                         i = jsonString.indexOf('"', i + 1);
                     } while (jsonString.charAt(i - 1) == '\\');
 
-                    output = jsonString.substring(fieldStart, i);
-                    done = true;
+                    value = jsonString.substring(fieldStart, i);
+                    if (currentContainer == null) {
+                        output = value;
+                        done = true;
+                    } else {
+                        typeStack.pop();
+                        expectingComma = true;
+                        if (currentContainer instanceof Map) {
+                            ((Map<String, Object>) currentContainer).put(propertyName, value);
+                            currentType = Type.OBJECT;
+                        } else {
+                            ((List<Object>) currentContainer).add(value);
+                            currentType = Type.ARRAY;
+
+                        }
+                    }
+
                     i++;
                     break;
-                case OBJECT_STRING: {
-                    // Fast-forward to end of string value, which is a '"' character
-                    do {
-                        i = jsonString.indexOf('"', i + 1);
-                    } while (jsonString.charAt(i - 1) == '\\');
-
-                    Object value = jsonString.substring(fieldStart, i);
-                    ((Map<String, Object>) currentContainer).put(propertyName, value);
-                    expectingComma = true;
-
-                    typeStack.pop();
-                    currentType = Type.OBJECT;
-                    i++;
-                    break;
-                }
-                case ARRAY_STRING: {
-                    // Fast-forward to end of string value, which is a '"' character
-                    do {
-                        i = jsonString.indexOf('"', i + 1);
-                    } while (jsonString.charAt(i - 1) == '\\');
-
-                    Object value = jsonString.substring(fieldStart, i);
-                    ((List<Object>) currentContainer).add(value);
-                    expectingComma = true;
-
-                    typeStack.pop();
-                    currentType = Type.ARRAY;
-                    i++;
-                    break;
-                }
                 case NUMBER: {
                     boolean withDecimal = false;
-                    while (!Constants.isWhitespace(current) && i++ < end) {
+                    while (current != ',' && current != '}' && current != ']' && !Constants.isWhitespace(current) && i++ < end) {
                         if (!withDecimal && current == '.' || current == 'e' || current == 'E') {
                             withDecimal = true;
                         }
@@ -118,7 +104,6 @@ public class JsonParse {
                     }
 
                     String valueString = jsonString.substring(fieldStart, i);
-                    Object value;
                     try {
                         if (withDecimal) {
                             value = Double.valueOf(valueString);
@@ -126,142 +111,36 @@ public class JsonParse {
                             value = Long.valueOf(valueString);
                         }
                     } catch (NumberFormatException e) {
-                        propertyNameStack.push(propertyName);
-                        containerStack.push(currentContainer);
+                        if (currentContainer != null) {
+                            propertyNameStack.push(propertyName);
+                            containerStack.push(currentContainer);
+                        }
                         throw new JsonParseException(propertyNameStack, containerStack, "\"" + valueString
                                 + "\" expected to be a number, but wasn't");
                     }
 
-                    output = value;
-                    done = true;
-                    break;
-                }
-                case OBJECT_NUMBER: {
-                    boolean withDecimal = false;
-                    while (current != ',' && current != '}' && !Constants.isWhitespace(current) && i++ < end) {
-                        if (!withDecimal && current == '.' || current == 'e' || current == 'E') {
-                            withDecimal = true;
-                        }
-                        current = jsonString.charAt(i);
-                    }
-
-                    String valueString = jsonString.substring(fieldStart, i);
-                    Object value;
-                    try {
-                        if (withDecimal) {
-                            value = Double.valueOf(valueString);
+                    if (currentContainer == null) {
+                        output = value;
+                        done = true;
+                    } else {
+                        typeStack.pop();
+                        expectingComma = true;
+                        if (currentContainer instanceof Map) {
+                            ((Map<String, Object>) currentContainer).put(propertyName, value);
+                            currentType = Type.OBJECT;
                         } else {
-                            value = Long.valueOf(valueString);
+                            ((List<Object>) currentContainer).add(value);
+                            currentType = Type.ARRAY;
                         }
-                    } catch (NumberFormatException e) {
-                        propertyNameStack.push(propertyName);
-                        containerStack.push(currentContainer);
-                        throw new JsonParseException(propertyNameStack, containerStack, "\"" + valueString
-                                + "\" expected to be a number, but wasn't");
                     }
-
-                    ((Map<String, Object>) currentContainer).put(propertyName, value);
-                    typeStack.pop();
-                    currentType = Type.OBJECT;
-                    expectingComma = true;
-
-                    break;
-                }
-                case ARRAY_NUMBER: {
-                    boolean withDecimal = false;
-                    while (current != ',' && current != ']' && !Constants.isWhitespace(current) && i++ < end) {
-                        if (!withDecimal && current == '.' || current == 'e' || current == 'E') {
-                            withDecimal = true;
-                        }
-                        current = jsonString.charAt(i);
-                    }
-
-                    String valueString = jsonString.substring(fieldStart, i);
-                    Object value;
-                    try {
-                        if (withDecimal) {
-                            value = Double.valueOf(valueString);
-                        } else {
-                            value = Long.valueOf(valueString);
-                        }
-                    } catch (NumberFormatException e) {
-                        propertyNameStack.push(propertyName);
-                        containerStack.push(currentContainer);
-                        throw new JsonParseException(propertyNameStack, containerStack, "\"" + valueString
-                                + "\" expected to be a number, but wasn't");
-                    }
-
-                    ((List<Object>) currentContainer).add(value);
-                    typeStack.pop();
-                    currentType = Type.ARRAY;
-                    expectingComma = true;
-
                     break;
                 }
                 case CONSTANT: {
-                    while (!Constants.isWhitespace(current) && i++ < end) {
-                        current = jsonString.charAt(i);
-                    }
-
-                    String valueString = jsonString.substring(fieldStart, i);
-                    switch (valueString) {
-                        case "false":
-                            output = false;
-                            break;
-                        case "true":
-                            output = true;
-                            break;
-                        case "null":
-                            output = null;
-                            break;
-                        default:
-                            propertyNameStack.push(propertyName);
-                            containerStack.push(currentContainer);
-                            throw new JsonParseException(propertyNameStack, containerStack, "\"" + valueString
-                                    + "\" is not a valid constant. Missing quotes?");
-                    }
-
-                    done = true;
-                    break;
-                }
-                case OBJECT_CONSTANT: {
-                    while (current != ',' && current != '}' && !Constants.isWhitespace(current) && i++ < end) {
-                        current = jsonString.charAt(i);
-                    }
-
-                    String valueString = jsonString.substring(fieldStart, i);
-                    Object value;
-                    switch (valueString) {
-                        case "false":
-                            value = false;
-                            break;
-                        case "true":
-                            value = true;
-                            break;
-                        case "null":
-                            value = null;
-                            break;
-                        default:
-                            propertyNameStack.push(propertyName);
-                            containerStack.push(currentContainer);
-                            throw new JsonParseException(propertyNameStack, containerStack, "\"" + valueString
-                                    + "\" is not a valid constant. Missing quotes?");
-                    }
-
-                    ((Map<String, Object>) currentContainer).put(propertyName, value);
-                    typeStack.pop();
-                    currentType = Type.OBJECT;
-                    expectingComma = true;
-
-                    break;
-                }
-                case ARRAY_CONSTANT: {
                     while (current != ',' && current != '}' && current != ']' && !Constants.isWhitespace(current) && i++ < end) {
                         current = jsonString.charAt(i);
                     }
 
                     String valueString = jsonString.substring(fieldStart, i);
-                    Object value;
                     switch (valueString) {
                         case "false":
                             value = false;
@@ -273,17 +152,29 @@ public class JsonParse {
                             value = null;
                             break;
                         default:
-                            propertyNameStack.push(propertyName);
-                            containerStack.push(currentContainer);
+                            if (currentContainer != null) {
+                                propertyNameStack.push(propertyName);
+                                containerStack.push(currentContainer);
+                            }
                             throw new JsonParseException(propertyNameStack, containerStack, "\"" + valueString
                                     + "\" is not a valid constant. Missing quotes?");
                     }
 
-                    ((List<Object>) currentContainer).add(value);
-                    typeStack.pop();
-                    currentType = Type.ARRAY;
-                    expectingComma = true;
+                    if (currentContainer == null) {
+                        output = value;
+                        done = true;
+                    } else {
+                        typeStack.pop();
+                        expectingComma = true;
+                        if (currentContainer instanceof Map) {
+                            ((Map<String, Object>) currentContainer).put(propertyName, value);
+                            currentType = Type.OBJECT;
+                        } else {
+                            ((List<Object>) currentContainer).add(value);
+                            currentType = Type.ARRAY;
 
+                        }
+                    }
                     break;
                 }
                 case INITIAL:
@@ -348,8 +239,8 @@ public class JsonParse {
                         }
                     } else if (current == '"') {
                         typeStack.pop();
-                        typeStack.push(Type.OBJECT_STRING);
-                        currentType = Type.OBJECT_STRING;
+                        typeStack.push(Type.STRING);
+                        currentType = Type.STRING;
                         fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
                         i++;
                     } else if (current == '{') {
@@ -372,14 +263,14 @@ public class JsonParse {
                     } else if (Constants.isLetter(current)) {
                         // Assume parsing a constant ("null", "true", "false", etc)
                         typeStack.pop();
-                        typeStack.push(Type.OBJECT_CONSTANT);
-                        currentType = Type.OBJECT_CONSTANT;
+                        typeStack.push(Type.CONSTANT);
+                        currentType = Type.CONSTANT;
                         fieldStart = i;
                     } else if (Constants.isNumberStart(current)) {
                         // Is a number
                         typeStack.pop();
-                        typeStack.push(Type.OBJECT_NUMBER);
-                        currentType = Type.OBJECT_NUMBER;
+                        typeStack.push(Type.NUMBER);
+                        currentType = Type.NUMBER;
                         fieldStart = i;
                     } else {
                         throw new JsonParseException(propertyNameStack, containerStack,
@@ -460,8 +351,8 @@ public class JsonParse {
                                     "preceded by too many commas");
                         }
                     } else if (current == '"') {
-                        typeStack.push(Type.ARRAY_STRING);
-                        currentType = Type.ARRAY_STRING;
+                        typeStack.push(Type.STRING);
+                        currentType = Type.STRING;
                         fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
                         i++;
                     } else if (current == '{') {
@@ -499,13 +390,13 @@ public class JsonParse {
                         }
                     } else if (Constants.isLetter(current)) {
                         // Assume parsing a constant ("null", "true", "false", etc)
-                        typeStack.push(Type.ARRAY_CONSTANT);
-                        currentType = Type.ARRAY_CONSTANT;
+                        typeStack.push(Type.CONSTANT);
+                        currentType = Type.CONSTANT;
                         fieldStart = i;
                     } else if (Constants.isNumberStart(current)) {
                         // Is a number
-                        typeStack.push(Type.ARRAY_NUMBER);
-                        currentType = Type.ARRAY_NUMBER;
+                        typeStack.push(Type.NUMBER);
+                        currentType = Type.NUMBER;
                         fieldStart = i;
                     } else {
                         propertyNameStack.push(propertyName);
@@ -538,12 +429,6 @@ public class JsonParse {
         NAME,
         STRING,
         NUMBER,
-        CONSTANT,
-        OBJECT_STRING,
-        OBJECT_NUMBER,
-        OBJECT_CONSTANT,
-        ARRAY_STRING,
-        ARRAY_NUMBER,
-        ARRAY_CONSTANT,
+        CONSTANT
     }
 }
