@@ -1,7 +1,7 @@
 # Json Parse [![Build Status](https://travis-ci.org/mitchhentges/json-parse.svg?branch=master)](https://travis-ci.org/mitchhentges/json-parse)
 
-A tool to quickly parse JSON into Java maps and lists. Consistently faster (sometimes more than 4x) than FasterXML's
-Jackson with an extremely small memory footprint.
+A tool to quickly parse JSON into Java maps and lists. Significantly faster than FasterXML's
+Jackson with an extremely small memory and size footprint.
 
 _Lower is better:_
 
@@ -107,22 +107,13 @@ public static void main(String[] args) throws InterruptedException {
 4: 1,2,3
 ```
 
-### Convert a JSON string to a Java `List<Object>`
+### Convert JSON strings to a Java objects.
 
-Can convert JSON arrays.
 
 ```
+// For example, arrays.
 String listString = "[1, 2, false]";
 List<Object> list = JsonParse.list(listString);
-```
-
-### Convert a JSON string to a Java `Map<String, Object>`
-
-Can convert JSON objects.
-
-```
-String mapString = "{\"fast\":true, \"super-neat\":true}";
-Map<String, Object> map = JsonParse.map(mapString);
 ```
 
 ## FAQ
