@@ -31,14 +31,29 @@ public class JsonParse {
         return (List<Object>) parse(jsonString);
     }
 
+    /**
+     * Pulls the internal JSON string from jsonString and returns it
+     * @param jsonString parsed
+     * @return the contents of the jsonString
+     */
     public static String string(String jsonString) {
         return (String) parse(jsonString);
     }
 
+    /**
+     * Converts jsonString into a {@link Number}, be it an integer or floating-point
+     * @param jsonString parsed
+     * @return the contents of the jsonString
+     */
     public static Number number(String jsonString) {
         return (Number) parse(jsonString);
     }
 
+    /**
+     * Converts jsonString into a boolean
+     * @param jsonString parsed
+     * @return the contents of the jsonString
+     */
     public static boolean bool(String jsonString) {
         return (boolean) parse(jsonString);
     }
