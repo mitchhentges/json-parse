@@ -31,14 +31,29 @@ public class JsonParse {
         return (List<Object>) parse(jsonString);
     }
 
+    /**
+     * Pulls the internal JSON string from jsonString and returns it
+     * @param jsonString parsed
+     * @return the contents of the jsonString
+     */
     public static String string(String jsonString) {
         return (String) parse(jsonString);
     }
 
+    /**
+     * Converts jsonString into a {@link Number}, be it an integer or floating-point
+     * @param jsonString parsed
+     * @return the contents of the jsonString
+     */
     public static Number number(String jsonString) {
         return (Number) parse(jsonString);
     }
 
+    /**
+     * Converts jsonString into a boolean
+     * @param jsonString parsed
+     * @return the contents of the jsonString
+     */
     public static boolean bool(String jsonString) {
         return (boolean) parse(jsonString);
     }
@@ -75,7 +90,7 @@ public class JsonParse {
         } else if (current == '[') {
             currentType = Type.ARRAY;
             currentContainer = new ArrayList<>();
-            propertyName = "[]";
+            propertyName = null;
             i++;
         } else if (current == '"') {
             currentType = Type.STRING;
@@ -237,7 +252,7 @@ public class JsonParse {
                         stateStack.push(new State(propertyName, currentContainer, Type.OBJECT));
                         currentType = Type.ARRAY;
                         currentContainer = new ArrayList<>();
-                        propertyName = "[]";
+                        propertyName = null;
                         i++;
                     } else if (Constants.isLetter(current)) {
                         // Assume parsing a constant ("null", "true", "false", etc)

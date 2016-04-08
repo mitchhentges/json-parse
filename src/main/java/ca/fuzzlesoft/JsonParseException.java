@@ -21,7 +21,7 @@ public class JsonParseException extends RuntimeException {
         String jsonTrace = "";
         for (int i = 0; i < stateStack.size(); i++) {
             String name = stateStack.get(i).propertyName;
-            if (name.equals("[]")) {
+            if (name == null) {
                 // Fill in array index
                 List<Object> list = (List<Object>) stateStack.get(i).container;
                 name = String.format("[%d]", list.size());
