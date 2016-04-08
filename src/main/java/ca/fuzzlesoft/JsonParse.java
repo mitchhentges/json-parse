@@ -75,7 +75,7 @@ public class JsonParse {
         } else if (current == '[') {
             currentType = Type.ARRAY;
             currentContainer = new ArrayList<>();
-            propertyName = "[]";
+            propertyName = null;
             i++;
         } else if (current == '"') {
             currentType = Type.STRING;
@@ -237,7 +237,7 @@ public class JsonParse {
                         stateStack.push(new State(propertyName, currentContainer, Type.OBJECT));
                         currentType = Type.ARRAY;
                         currentContainer = new ArrayList<>();
-                        propertyName = "[]";
+                        propertyName = null;
                         i++;
                     } else if (Constants.isLetter(current)) {
                         // Assume parsing a constant ("null", "true", "false", etc)
