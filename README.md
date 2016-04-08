@@ -32,13 +32,13 @@ Boolean bool = JsonParse.bool(boolString);
 <dependency>
     <groupId>ca.fuzzlesoft</groupId>
     <artifactId>json-parse</artifactId>
-    <version>1.3.0</version>
+    <version>1.3.1</version>
 </dependency>
 ```
 
 **Gradle**
 ```
-compile 'ca.fuzzlesoft:json-parse:1.3.0'
+compile 'ca.fuzzlesoft:json-parse:1.3.1'
 ```
 
 ## Features

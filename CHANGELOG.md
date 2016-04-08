@@ -1,3 +1,9 @@
+# 1.3.1
+
+Performance release
+
+* Now will handle arrays faster, as it delimits their current "propertyName" as `null` instead of `"[]"`
+
 # 1.3.0
 
 Performance and array-index-trace release
