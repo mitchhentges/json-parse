@@ -162,10 +162,6 @@ public class JsonParse {
                             value = Long.valueOf(valueString);
                         }
                     } catch (NumberFormatException e) {
-                        /*if (currentContainer != null) {
-                            propertyNameStack.push(propertyName);
-                            containerStack.push(currentContainer);
-                        }*/
                         throw new JsonParseException(stateStack, "\"" + valueString +
                                 "\" expected to be a number, but wasn't");
                     }
@@ -409,7 +405,7 @@ public class JsonParse {
         final Object container;
         final Type type;
 
-        public State(String propertyName, Object container, Type type) {
+        State(String propertyName, Object container, Type type) {
             this.propertyName = propertyName;
             this.container = container;
             this.type = type;

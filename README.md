@@ -23,6 +23,10 @@ List<Object> list = JsonParse.list(listString);
 String string = JsonParse.string(stringString);
 Number number = JsonParse.number(numberString);
 Boolean bool = JsonParse.bool(boolString);
+
+// Will still parse if type isn't explicitly specified
+Object unknown = JsonParse.parse(scanner.nextLine());
+System.out.println(unkown.getClass());
 ```
 
 ## Getting the dependency
