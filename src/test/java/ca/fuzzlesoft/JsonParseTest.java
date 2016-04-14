@@ -28,6 +28,12 @@ public class JsonParseTest {
     }
 
     @Test
+    public void shouldParseEmptyString() {
+        String test = "\"\"";
+        Assert.assertEquals("", JsonParse.string(test));
+    }
+
+    @Test
     public void shouldParseSingleCharacterStrings() {
         String test = "{\"a\":\"b\"}";
         Map<String, Object> expected = MapBuilder.init()

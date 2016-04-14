@@ -95,7 +95,6 @@ public class JsonParse {
         } else if (current == '"') {
             currentType = Type.STRING;
             fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
-            i++;
         } else if (Constants.isLetter(current)) {
             // Assume parsing a constant ("null", "true", "false", etc)
             currentType = Type.CONSTANT;
@@ -238,7 +237,6 @@ public class JsonParse {
                     } else if (current == '"') {
                         currentType = Type.STRING;
                         fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
-                        i++;
                     } else if (current == '{') {
                         stateStack.push(new State(propertyName, currentContainer, Type.OBJECT));
                         currentType = Type.OBJECT;
@@ -284,7 +282,6 @@ public class JsonParse {
 
                         currentType = Type.NAME;
                         fieldStart = i + 1; // Don't start with `current`, as it is the beginning quotation
-                        i++;
                     } else if (current == '}') {
                         if (!stateStack.isEmpty()) {
                             State upper = stateStack.pop();
@@ -330,7 +327,6 @@ public class JsonParse {
                     } else if (current == '"') {
                         currentType = Type.STRING;
                         fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
-                        i++;
                     } else if (current == '{') {
                         stateStack.push(new State(propertyName, currentContainer, Type.ARRAY));
                         currentType = Type.OBJECT;
