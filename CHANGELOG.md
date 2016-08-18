@@ -1,3 +1,9 @@
+# 1.3.2
+
+Bugfix release
+
+* Empty strings will no longer break parsing
+
 # 1.3.1
 
 Performance release
