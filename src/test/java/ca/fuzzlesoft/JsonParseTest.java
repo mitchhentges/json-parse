@@ -231,19 +231,24 @@ public class JsonParseTest {
     }
 
     @Test
+    public void shouldUseRootForTopLevelException() {
+        assertFormatting("bork", "<root>: \"bork\" is not a valid constant. Missing quotes?");
+    }
+
+    @Test
     public void shouldFormatExceptionsWithJsonStack() {
-        assertFormatting("{\"a\":{\"b\":{\"c\": fasle}}}", "a.b.c: \"fasle\" is not a valid constant. Missing quotes?");
-        assertFormatting("{\"a\":true \"b\":false}", "a: wasn't followed by a comma");
-        assertFormatting("{\"a\" true}", "a: wasn't followed by a colon");
+        assertFormatting("{\"a\":{\"b\":{\"c\": fasle}}}", "<root>.a.b.c: \"fasle\" is not a valid constant. Missing quotes?");
+        assertFormatting("{\"a\":true \"b\":false}", "<root>.a: wasn't followed by a comma");
+        assertFormatting("{\"a\" true}", "<root>.a: wasn't followed by a colon");
         assertFormatting("{\"a\": true, v}", "<root>: unexpected character 'v' where a property name is expected. Missing quotes?");
-        assertFormatting("{\"a\": v}", "a: \"v\" is not a valid constant. Missing quotes?");
+        assertFormatting("{\"a\": v}", "<root>.a: \"v\" is not a valid constant. Missing quotes?");
     }
 
     @Test
     public void shouldUseSquareBracketsForFormattingErrorsInArrays() {
-        assertFormatting("[true, false false]", "[2]: wasn't preceded by a comma");
-        assertFormatting("[v]", "[0]: \"v\" is not a valid constant. Missing quotes?");
-        assertFormatting("{\"a\": [{v}]}", "a.[0]: unexpected character 'v' where a property name is expected. Missing quotes?");
+        assertFormatting("[true, false false]", "<root>.[2]: wasn't preceded by a comma");
+        assertFormatting("[v]", "<root>.[0]: \"v\" is not a valid constant. Missing quotes?");
+        assertFormatting("{\"a\": [{v}]}", "<root>.a.[0]: unexpected character 'v' where a property name is expected. Missing quotes?");
     }
 
     private void assertFormatting(String test, String expected) {

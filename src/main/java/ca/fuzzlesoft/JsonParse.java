@@ -197,7 +197,11 @@ public class JsonParse {
                             value = null;
                             break;
                         default:
-                            stateStack.push(new State(propertyName, currentContainer, Type.ARRAY));
+                            if (currentContainer instanceof Map) {
+                                stateStack.push(new State(propertyName, currentContainer, Type.OBJECT));
+                            } else if (currentContainer instanceof List) {
+                                stateStack.push(new State(propertyName, currentContainer, Type.ARRAY));
+                            }
                             throw new JsonParseException(stateStack, "\"" + valueString
                                     + "\" is not a valid constant. Missing quotes?");
                     }
@@ -223,7 +227,7 @@ public class JsonParse {
                     }
 
                     if (current != ':' && expectingColon) {
-                        stateStack.push(new State(propertyName, currentContainer, Type.ARRAY));
+                        stateStack.push(new State(propertyName, currentContainer, Type.OBJECT));
                         throw new JsonParseException(stateStack, "wasn't followed by a colon");
                     }
 
@@ -271,12 +275,12 @@ public class JsonParse {
                             expectingComma = false;
                             i++;
                         } else {
-                            stateStack.push(new State(propertyName, currentContainer, Type.ARRAY));
+                            stateStack.push(new State(propertyName, currentContainer, Type.OBJECT));
                             throw new JsonParseException(stateStack, "followed by too many commas");
                         }
                     } else if (current == '"') {
                         if (expectingComma) {
-                            stateStack.push(new State(propertyName, currentContainer, Type.ARRAY));
+                            stateStack.push(new State(propertyName, currentContainer, Type.OBJECT));
                             throw new JsonParseException(stateStack, "wasn't followed by a comma");
                         }
 

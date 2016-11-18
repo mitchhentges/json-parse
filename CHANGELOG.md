@@ -1,3 +1,10 @@
+# 1.3.3
+
+Bugfix release
+
+* Change format of error-trace message
+* Failing to parse root constant should throw JsonParseException, not NullPointerException
+
 # 1.3.2
 
 Bugfix release

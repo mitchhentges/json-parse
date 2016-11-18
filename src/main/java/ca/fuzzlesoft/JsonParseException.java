@@ -29,7 +29,7 @@ public class JsonParseException extends RuntimeException {
             jsonTrace += name + (i != stateStack.size() - 1 ? "." : "");
         }
 
-        jsonTrace = jsonTrace.equals("") ? "<root>" : jsonTrace;
+        jsonTrace = jsonTrace.equals("") ? "<root>" : "<root>." + jsonTrace;
 
         this.message = jsonTrace + ": " + message;
     }
