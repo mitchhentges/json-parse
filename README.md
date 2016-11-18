@@ -36,13 +36,13 @@ System.out.println(unkown.getClass());
 <dependency>
     <groupId>ca.fuzzlesoft</groupId>
     <artifactId>json-parse</artifactId>
-    <version>1.3.2</version>
+    <version>1.3.3</version>
 </dependency>
 ```
 
 **Gradle**
 ```
-compile 'ca.fuzzlesoft:json-parse:1.3.2'
+compile 'ca.fuzzlesoft:json-parse:1.3.3'
 ```
 
 ## Features
@@ -53,19 +53,19 @@ If incorrect JSON is passed to `JsonParse`, the thrown exception will explain _w
 
 ```
 {"outer": {"inner": {"a": true, "b": nulll}}}
-outer.inner.b: "nulll" is not a valid constant. Missing quotes?
+<root>.outer.inner.b: "nulll" is not a valid constant. Missing quotes?
 
 {"outer": {"inner": {"a": true "b": false}}}
-outer.inner.a: wasn't followed by a comma
+<root>.outer.inner.a: wasn't followed by a comma
 
 {"outer": {"no-colon" true}}
-outer.no-colon: "no-colon" wasn't followed by a colon
+<root>.outer.no-colon: "no-colon" wasn't followed by a colon
 
 {"object": {no-quotes: true}}
-object: unexpected character 'n' where a property name is expected. Missing quotes?
+<root>.object: unexpected character 'n' where a property name is expected. Missing quotes?
 
 {"outer": {"sick-list": [{}, {"inner": [1, [1, 2, 3, [fasle]]]}]}}
-outer.sick-list.[1].inner.[1].[3].[0]: "fasle" is not a valid constant. Missing quotes?
+<root>.outer.sick-list.[1].inner.[1].[3].[0]: "fasle" is not a valid constant. Missing quotes?
 ```
 
 
@@ -122,10 +122,10 @@ List<Object> list = JsonParse.list(listString);
 
 ## FAQ
 
-* Can this convert from JSON directly to `SomeObject`?
+* Can this convert from JSON directly to Plain Old Java Objects?
 
 Unfortunately not. JSON doesn't have any type information, so explicit knowledge is required before JSON can be
-converted. This is the job of a "binding framework"
+converted. That would be the job of a "binding framework"
 
 * Why is the code squashed so much?
 
