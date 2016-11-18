@@ -201,18 +201,6 @@ public class JsonParseTest {
     }
 
     @Test
-    public void shouldOnlyThrowJsonParseExceptionOnTooManyClosingTags() {
-        try {
-            JsonParse.map("{}}");
-            Assert.fail("No exception thrown for extra object end tag");
-        } catch (JsonParseException ignored) {}
-        try {
-            JsonParse.list("[]]");
-            Assert.fail("No exception thrown for extra array end tag");
-        } catch (JsonParseException ignored) {}
-    }
-
-    @Test
     public void shouldTestIndividualStrings() {
         Assert.assertEquals("foo", JsonParse.string("\n\t\"foo\"  "));
         Assert.assertEquals(null, JsonParse.string("\n\tnull  "));

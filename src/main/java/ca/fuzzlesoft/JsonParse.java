@@ -68,11 +68,10 @@ public class JsonParse {
         Stack<State> stateStack = new Stack<>();
         Type currentType;
 
-        boolean done = false, expectingComma = false, expectingColon = false;
+        boolean expectingComma = false, expectingColon = false;
         int fieldStart = 0, end = jsonString.length() - 1, i = 0;
         String propertyName = null;
         Object currentContainer = null;
-        Object output = null;
         Object value;
         char current;
 
@@ -106,7 +105,7 @@ public class JsonParse {
             throw new JsonParseException(stateStack, "Unexpected character \"" + current + "\" instead of root value");
         }
 
-        while (!done && i <= end) {
+        while (i <= end) {
             current = jsonString.charAt(i);
             switch (currentType) {
                 case NAME:
@@ -128,8 +127,7 @@ public class JsonParse {
 
                     value = jsonString.substring(fieldStart, i);
                     if (currentContainer == null) {
-                        output = value;
-                        done = true;
+                        return value;
                     } else {
                         expectingComma = true;
                         if (currentContainer instanceof Map) {
@@ -166,8 +164,7 @@ public class JsonParse {
                     }
 
                     if (currentContainer == null) {
-                        output = value;
-                        done = true;
+                        return value;
                     } else {
                         expectingComma = true;
                         if (currentContainer instanceof Map) {
@@ -207,8 +204,7 @@ public class JsonParse {
                     }
 
                     if (currentContainer == null) {
-                        output = value;
-                        done = true;
+                        return value;
                     } else {
                         expectingComma = true;
                         if (currentContainer instanceof Map) {
@@ -302,8 +298,7 @@ public class JsonParse {
                             expectingComma = true;
                             i++;
                         } else {
-                            output = currentContainer;
-                            done = true;
+                            return currentContainer;
                         }
                     } else if (!Constants.isWhitespace(current)) {
                         throw new JsonParseException(stateStack, "unexpected character '" + current +
@@ -357,8 +352,7 @@ public class JsonParse {
                             expectingComma = true;
                             i++;
                         } else {
-                            output = currentContainer;
-                            done = true;
+                            return currentContainer;
                         }
                     } else if (Constants.isLetter(current)) {
                         // Assume parsing a constant ("null", "true", "false", etc)
@@ -376,18 +370,7 @@ public class JsonParse {
             }
         }
 
-        if (!done) {
-            throw new JsonParseException("Root element wasn't terminated correctly (Missing ']' or '}'?)");
-        }
-
-        while (++i <= end) {
-            current = jsonString.charAt(i);
-            if (!Constants.isWhitespace(current)) {
-                throw new JsonParseException("Unexpected character \"" + current + "\" found after root element");
-            }
-        }
-
-        return output;
+        throw new JsonParseException("Root element wasn't terminated correctly (Missing ']' or '}'?)");
     }
 
     enum Type {

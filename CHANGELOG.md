@@ -4,6 +4,7 @@ Bugfix release
 
 * Change format of error-trace message
 * Failing to parse root constant should throw JsonParseException, not NullPointerException
+* Ignore all input after root element
 
 # 1.3.2
 
