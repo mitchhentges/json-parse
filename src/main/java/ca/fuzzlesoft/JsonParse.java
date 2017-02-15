@@ -246,7 +246,6 @@ public class JsonParse {
                         stateStack.push(new State(propertyName, currentContainer, Type.OBJECT));
                         currentType = Type.ARRAY;
                         currentContainer = new ArrayList<>();
-                        propertyName = null;
                         i++;
                     } else if (Constants.isLetter(current)) {
                         // Assume parsing a constant ("null", "true", "false", etc)
@@ -311,7 +310,7 @@ public class JsonParse {
                     }
 
                     if (current != ',' && current != ']' && current != '}' && expectingComma) {
-                        stateStack.push(new State(propertyName, currentContainer, Type.ARRAY));
+                        stateStack.push(new State(null, currentContainer, Type.ARRAY));
                         throw new JsonParseException(stateStack, "wasn't preceded by a comma");
                     }
 
@@ -320,19 +319,19 @@ public class JsonParse {
                             expectingComma = false;
                             i++;
                         } else {
-                            stateStack.push(new State(propertyName, currentContainer, Type.ARRAY));
+                            stateStack.push(new State(null, currentContainer, Type.ARRAY));
                             throw new JsonParseException(stateStack, "preceded by too many commas");
                         }
                     } else if (current == '"') {
                         currentType = Type.STRING;
                         fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
                     } else if (current == '{') {
-                        stateStack.push(new State(propertyName, currentContainer, Type.ARRAY));
+                        stateStack.push(new State(null, currentContainer, Type.ARRAY));
                         currentType = Type.OBJECT;
                         currentContainer = new HashMap<>();
                         i++;
                     } else if (current == '[') {
-                        stateStack.push(new State(propertyName, currentContainer, Type.ARRAY));
+                        stateStack.push(new State(null, currentContainer, Type.ARRAY));
                         currentType = Type.ARRAY;
                         currentContainer = new ArrayList<>();
                         i++;
