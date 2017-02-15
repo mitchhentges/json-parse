@@ -372,6 +372,18 @@ public class JsonParse {
         throw new JsonParseException("Root element wasn't terminated correctly (Missing ']' or '}'?)");
     }
 
+    /**
+     * Returns the index of either a quotation, or a control character backslash.
+     * !! Do not inline this function, the JVM <3 optimising it, and inlining it slows it down ... somehow.
+     * @param str content string to find quote or backslash
+     * @param start start index to search
+     * @return index of the first quote or backslash found at or after `start`
+     */
+    private static int indexOfSpecial(String str, int start) {
+        while (++start <= str.length() && str.charAt(start) != '"' && str.charAt(start) != '\\');
+        return start;
+    }
+
     enum Type {
         ARRAY,
         OBJECT,
