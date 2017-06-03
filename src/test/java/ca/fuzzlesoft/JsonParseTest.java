@@ -1,16 +1,12 @@
 package ca.fuzzlesoft;
 
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import ca.fuzzlesoft.JsonParse.Type;
 
 /**
  * @author mitch
@@ -208,8 +204,8 @@ public class JsonParseTest {
 
     @Test
     public void shouldTestIndividualNumbers() {
-        Assert.assertEquals(1234L, JsonParse.number("\n\t1234  "));
-        Assert.assertEquals(Double.valueOf("-13.3e+7"), JsonParse.number("\n\t-13.3e+7  "));
+        Assert.assertEquals(1234L, JsonParse.number("\n\t1234"));
+        Assert.assertEquals(Double.valueOf("-13.3e+7"), JsonParse.number("\n\t-13.3e+7"));
     }
 
     @Test
@@ -219,8 +215,31 @@ public class JsonParseTest {
     }
 
     @Test
+    public void shouldAllowBackslashAtEndOfString() {
+        Assert.assertEquals("a\\", JsonParse.string("\"a\\\\\""));
+    }
+
+    @Test
+    public void shouldConvertControlSequences() {
+        Assert.assertEquals("\"", JsonParse.string("\"\\\"\""));
+        Assert.assertEquals("\\", JsonParse.string("\"\\\\\""));
+        Assert.assertEquals("/", JsonParse.string("\"\\/\""));
+        Assert.assertEquals("\b", JsonParse.string("\"\\b\""));
+        Assert.assertEquals("\f", JsonParse.string("\"\\f\""));
+        Assert.assertEquals("\n", JsonParse.string("\"\\n\""));
+        Assert.assertEquals("\r", JsonParse.string("\"\\r\""));
+        Assert.assertEquals("\t", JsonParse.string("\"\\t\""));
+        Assert.assertEquals("A", JsonParse.string("\"\\u0041\""));
+    }
+
+    @Test
     public void shouldUseRootForTopLevelException() {
         assertFormatting("bork", "<root>: \"bork\" is not a valid constant. Missing quotes?");
+    }
+
+    @Test
+    public void shouldThrowErrorIfNoJsonToParse() {
+        assertFormatting("", "Provided JSON string did not contain a value");
     }
 
     @Test
@@ -228,6 +247,7 @@ public class JsonParseTest {
         assertFormatting("{\"a\":{\"b\":{\"c\": fasle}}}", "<root>.a.b.c: \"fasle\" is not a valid constant. Missing quotes?");
         assertFormatting("{\"a\":true \"b\":false}", "<root>.a: wasn't followed by a comma");
         assertFormatting("{\"a\" true}", "<root>.a: wasn't followed by a colon");
+        assertFormatting("{\"a\"::true}", "<root>.a: was followed by too many colons");
         assertFormatting("{\"a\": true, v}", "<root>: unexpected character 'v' where a property name is expected. Missing quotes?");
         assertFormatting("{\"a\": v}", "<root>.a: \"v\" is not a valid constant. Missing quotes?");
     }
@@ -237,6 +257,8 @@ public class JsonParseTest {
         assertFormatting("[true, false false]", "<root>.[2]: wasn't preceded by a comma");
         assertFormatting("[v]", "<root>.[0]: \"v\" is not a valid constant. Missing quotes?");
         assertFormatting("{\"a\": [{v}]}", "<root>.a.[0]: unexpected character 'v' where a property name is expected. Missing quotes?");
+        assertFormatting("[{\"key\":\"value\"},{\"other\":bap}]", "<root>.[1].other: \"bap\" is not a valid constant. Missing quotes?");
+        assertFormatting("[!]", "<root>.[0]: Unexpected character \"!\" instead of array value");
     }
 
     private void assertFormatting(String test, String expected) {

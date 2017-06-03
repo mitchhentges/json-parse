@@ -75,11 +75,10 @@ public class JsonParse {
         Object value;
         char current;
 
-        while (Constants.isWhitespace((current = jsonString.charAt(i)))) {
-            if (i >= end) {
-                throw new JsonParseException("Provided string did not contain a value");
-            }
-            i++;
+        try {
+            while (Constants.isWhitespace((current = jsonString.charAt(i)))) i++;
+        } catch (IndexOutOfBoundsException e) {
+            throw new JsonParseException("Provided JSON string did not contain a value");
         }
 
         if (current == '{') {
@@ -93,7 +92,7 @@ public class JsonParse {
             i++;
         } else if (current == '"') {
             currentType = Type.STRING;
-            fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
+            fieldStart = i;
         } else if (Constants.isLetter(current)) {
             // Assume parsing a constant ("null", "true", "false", etc)
             currentType = Type.CONSTANT;
@@ -109,23 +108,26 @@ public class JsonParse {
             current = jsonString.charAt(i);
             switch (currentType) {
                 case NAME:
-                    // Fast-forward to destination, which is an ending quote
-                    do {
-                        i = jsonString.indexOf('"', i + 1);
-                    } while (jsonString.charAt(i - 1) == '\\');
-
-                    propertyName = jsonString.substring(fieldStart, i);
+                    try {
+                        ExtractedString extracted = extractString(jsonString, i);
+                        i = extracted.sourceEnd;
+                        propertyName = extracted.str;
+                    } catch (StringIndexOutOfBoundsException e) {
+                        throw new JsonParseException(stateStack, "String did not have ending quote");
+                    }
                     currentType = Type.HEURISTIC;
                     expectingColon = true;
                     i++;
                     break;
                 case STRING:
-                    // Fast-forward to end of string value, which is a '"' character
-                    do {
-                        i = jsonString.indexOf('"', i + 1);
-                    } while (jsonString.charAt(i - 1) == '\\');
+                    try {
+                        ExtractedString extracted = extractString(jsonString, i);
+                        i = extracted.sourceEnd;
+                        value = extracted.str;
+                    } catch (StringIndexOutOfBoundsException e) {
+                        throw new JsonParseException(stateStack, "String did not have ending quote");
+                    }
 
-                    value = jsonString.substring(fieldStart, i);
                     if (currentContainer == null) {
                         return value;
                     } else {
@@ -144,16 +146,21 @@ public class JsonParse {
                     break;
                 case NUMBER: {
                     boolean withDecimal = false;
-                    while (Constants.isNumber(current) && i++ < end) {
-                        if (!withDecimal && current == '.' || current == 'e' || current == 'E') {
-                            withDecimal = true;
-                        }
+                    boolean withE = false;
+                    do {
                         current = jsonString.charAt(i);
-                    }
+                        if (!withDecimal && current == '.') {
+                            withDecimal = true;
+                        } else if (!withE && (current == 'e' || current == 'E')) {
+                            withE = true;
+                        } else if (!Constants.isNumberStart(current) && current != '+') {
+                            break;
+                        }
+                    } while (i++ < end);
 
                     String valueString = jsonString.substring(fieldStart, i);
                     try {
-                        if (withDecimal) {
+                        if (withDecimal || withE) {
                             value = Double.valueOf(valueString);
                         } else {
                             value = Long.valueOf(valueString);
@@ -232,11 +239,12 @@ public class JsonParse {
                             expectingColon = false;
                             i++;
                         } else {
-                            throw new JsonParseException(stateStack, "wasn't followed by too many colons");
+                            stateStack.push(new State(propertyName, currentContainer, Type.OBJECT));
+                            throw new JsonParseException(stateStack, "was followed by too many colons");
                         }
                     } else if (current == '"') {
                         currentType = Type.STRING;
-                        fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
+                        fieldStart = i;
                     } else if (current == '{') {
                         stateStack.push(new State(propertyName, currentContainer, Type.OBJECT));
                         currentType = Type.OBJECT;
@@ -246,7 +254,6 @@ public class JsonParse {
                         stateStack.push(new State(propertyName, currentContainer, Type.OBJECT));
                         currentType = Type.ARRAY;
                         currentContainer = new ArrayList<>();
-                        propertyName = null;
                         i++;
                     } else if (Constants.isLetter(current)) {
                         // Assume parsing a constant ("null", "true", "false", etc)
@@ -281,7 +288,7 @@ public class JsonParse {
                         }
 
                         currentType = Type.NAME;
-                        fieldStart = i + 1; // Don't start with `current`, as it is the beginning quotation
+                        fieldStart = i;
                     } else if (current == '}') {
                         if (!stateStack.isEmpty()) {
                             State upper = stateStack.pop();
@@ -311,7 +318,7 @@ public class JsonParse {
                     }
 
                     if (current != ',' && current != ']' && current != '}' && expectingComma) {
-                        stateStack.push(new State(propertyName, currentContainer, Type.ARRAY));
+                        stateStack.push(new State(null, currentContainer, Type.ARRAY));
                         throw new JsonParseException(stateStack, "wasn't preceded by a comma");
                     }
 
@@ -320,19 +327,19 @@ public class JsonParse {
                             expectingComma = false;
                             i++;
                         } else {
-                            stateStack.push(new State(propertyName, currentContainer, Type.ARRAY));
+                            stateStack.push(new State(null, currentContainer, Type.ARRAY));
                             throw new JsonParseException(stateStack, "preceded by too many commas");
                         }
                     } else if (current == '"') {
                         currentType = Type.STRING;
-                        fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
+                        fieldStart = i;
                     } else if (current == '{') {
-                        stateStack.push(new State(propertyName, currentContainer, Type.ARRAY));
+                        stateStack.push(new State(null, currentContainer, Type.ARRAY));
                         currentType = Type.OBJECT;
                         currentContainer = new HashMap<>();
                         i++;
                     } else if (current == '[') {
-                        stateStack.push(new State(propertyName, currentContainer, Type.ARRAY));
+                        stateStack.push(new State(null, currentContainer, Type.ARRAY));
                         currentType = Type.ARRAY;
                         currentContainer = new ArrayList<>();
                         i++;
@@ -355,7 +362,7 @@ public class JsonParse {
                             return currentContainer;
                         }
                     } else if (Constants.isLetter(current)) {
-                        // Assume parsing a constant ("null", "true", "false", etc)
+                        // Assume parsing a   ("null", "true", "false", etc)
                         currentType = Type.CONSTANT;
                         fieldStart = i;
                     } else if (Constants.isNumberStart(current)) {
@@ -364,7 +371,7 @@ public class JsonParse {
                         fieldStart = i;
                     } else {
                         stateStack.push(new State(propertyName, currentContainer, Type.ARRAY));
-                        throw new JsonParseException("Unexpected character \"" + current + "\" instead of array value");
+                        throw new JsonParseException(stateStack, "Unexpected character \"" + current + "\" instead of array value");
                     }
                     break;
             }
@@ -373,14 +380,58 @@ public class JsonParse {
         throw new JsonParseException("Root element wasn't terminated correctly (Missing ']' or '}'?)");
     }
 
-    enum Type {
-        ARRAY,
-        OBJECT,
-        HEURISTIC,
-        NAME,
-        STRING,
-        NUMBER,
-        CONSTANT
+    private static ExtractedString extractString(String jsonString, int fieldStart) {
+        StringBuilder builder = new StringBuilder();
+        while (true) {
+            int i = indexOfSpecial(jsonString, fieldStart);
+            char c = jsonString.charAt(i);
+            if (c == '"') {
+                builder.append(jsonString.substring(fieldStart + 1, i));
+                ExtractedString val = new ExtractedString();
+                val.sourceEnd = i;
+                val.str = builder.toString();
+                return val;
+            } else if (c == '\\') {
+                builder.append(jsonString.substring(fieldStart + 1, i));
+
+                c = jsonString.charAt(i + 1);
+                switch (c) {
+                    case '"':
+                        builder.append('\"');
+                        break;
+                    case '\\':
+                        builder.append('\\');
+                        break;
+                    case '/':
+                        builder.append('/');
+                        break;
+                    case 'b':
+                        builder.append('\b');
+                        break;
+                    case 'f':
+                        builder.append('\f');
+                        break;
+                    case 'n':
+                        builder.append('\n');
+                        break;
+                    case 'r':
+                        builder.append('\r');
+                        break;
+                    case 't':
+                        builder.append('\t');
+                        break;
+                    case 'u':
+                        builder.append(Character.toChars(
+                                Integer.parseInt(jsonString.substring(i + 2, i + 6), 16)));
+                        fieldStart = i + 5; // Jump over escape sequence and code point
+                        continue;
+
+                }
+                fieldStart = i + 1; // Jump over escape sequence
+            } else {
+                throw new IndexOutOfBoundsException();
+            }
+        }
     }
 
     static class State {
@@ -393,5 +444,32 @@ public class JsonParse {
             this.container = container;
             this.type = type;
         }
+    }
+
+    /**
+     * Returns the index of either a quotation, or a control character backslash. Skips the first element.
+     * !! Do not inline this function, the JVM <3 optimising it, and inlining it slows it down ... somehow.
+     * @param str content string to find quote or backslash
+     * @param start start index to search
+     * @return index of the first quote or backslash found at or after `start`
+     */
+    private static int indexOfSpecial(String str, int start) {
+        while (++start < str.length() && str.charAt(start) != '"' && str.charAt(start) != '\\');
+        return start;
+    }
+    private enum Type {
+        ARRAY,
+        OBJECT,
+        HEURISTIC,
+        NAME,
+        STRING,
+        NUMBER,
+        CONSTANT
+
+    }
+
+    private static class ExtractedString {
+        int sourceEnd;
+        String str;
     }
 }
