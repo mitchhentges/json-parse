@@ -472,18 +472,4 @@ public class JsonParse {
         int sourceEnd;
         String str;
     }
-
-    public static void main(String[] args) {
-        String toParse = "{\"a\":true, \"foo\": \"confirmed\", \"bar\": -3.642}";
-
-        int iterations = 10000;
-        long start = System.currentTimeMillis();
-
-        for (int i = 0; i < iterations; i++) {
-            JsonParse.map(toParse);
-        }
-
-        long jsonParse = System.currentTimeMillis() - start;
-        System.out.println(jsonParse);
-    }
 }
