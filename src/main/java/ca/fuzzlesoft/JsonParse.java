@@ -93,7 +93,7 @@ public class JsonParse {
             i++;
         } else if (current == '"') {
             currentType = Type.STRING;
-            fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
+            fieldStart = i;
         } else if (Constants.isLetter(current)) {
             // Assume parsing a constant ("null", "true", "false", etc)
             currentType = Type.CONSTANT;
@@ -109,31 +109,26 @@ public class JsonParse {
             current = jsonString.charAt(i);
             switch (currentType) {
                 case NAME:
-                    StringBuilder builder = new StringBuilder();
-                    int beginning = fieldStart;
-                    while (true) {
-                        i = indexOfSpecial(jsonString, i);
-                        char c = jsonString.charAt(i);
-                        if (c == '"') {
-                            builder.append(jsonString.substring(beginning, i));
-                            break;
-                        } else if (c == '/') {
-
-                        }
+                    try {
+                        ExtractedString extracted = extractString(jsonString, i);
+                        i = extracted.sourceEnd;
+                        propertyName = extracted.str;
+                    } catch (StringIndexOutOfBoundsException e) {
+                        throw new JsonParseException(stateStack, "String did not have ending quote");
                     }
-
-                    propertyName = builder.toString();
                     currentType = Type.HEURISTIC;
                     expectingColon = true;
                     i++;
                     break;
                 case STRING:
-                    // Fast-forward to end of string value, which is a '"' character
-                    do {
-                        i = indexOfSpecial(jsonString, i);
-                    } while (jsonString.charAt(i - 1) == '\\');
+                    try {
+                        ExtractedString extracted = extractString(jsonString, i);
+                        i = extracted.sourceEnd;
+                        value = extracted.str;
+                    } catch (StringIndexOutOfBoundsException e) {
+                        throw new JsonParseException(stateStack, "String did not have ending quote");
+                    }
 
-                    value = jsonString.substring(fieldStart, i);
                     if (currentContainer == null) {
                         return value;
                     } else {
@@ -152,16 +147,21 @@ public class JsonParse {
                     break;
                 case NUMBER: {
                     boolean withDecimal = false;
-                    while (Constants.isNumber(current) && i++ < end) {
-                        if (!withDecimal && current == '.' || current == 'e' || current == 'E') {
-                            withDecimal = true;
-                        }
+                    boolean withE = false;
+                    do {
                         current = jsonString.charAt(i);
-                    }
+                        if (!withDecimal && current == '.') {
+                            withDecimal = true;
+                        } else if (!withE && (current == 'e' || current == 'E')) {
+                            withE = true;
+                        } else if (!Constants.isNumberStart(current) && current != '+') {
+                            break;
+                        }
+                    } while (i++ < end);
 
                     String valueString = jsonString.substring(fieldStart, i);
                     try {
-                        if (withDecimal) {
+                        if (withDecimal || withE) {
                             value = Double.valueOf(valueString);
                         } else {
                             value = Long.valueOf(valueString);
@@ -245,7 +245,7 @@ public class JsonParse {
                         }
                     } else if (current == '"') {
                         currentType = Type.STRING;
-                        fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
+                        fieldStart = i;
                     } else if (current == '{') {
                         stateStack.push(new State(propertyName, currentContainer, Type.OBJECT));
                         currentType = Type.OBJECT;
@@ -289,7 +289,7 @@ public class JsonParse {
                         }
 
                         currentType = Type.NAME;
-                        fieldStart = i + 1; // Don't start with `current`, as it is the beginning quotation
+                        fieldStart = i;
                     } else if (current == '}') {
                         if (!stateStack.isEmpty()) {
                             State upper = stateStack.pop();
@@ -333,7 +333,7 @@ public class JsonParse {
                         }
                     } else if (current == '"') {
                         currentType = Type.STRING;
-                        fieldStart = i + 1; // Don't start with current `i`, as it is delimiter: '"'
+                        fieldStart = i;
                     } else if (current == '{') {
                         stateStack.push(new State(null, currentContainer, Type.ARRAY));
                         currentType = Type.OBJECT;
@@ -381,8 +381,59 @@ public class JsonParse {
         throw new JsonParseException("Root element wasn't terminated correctly (Missing ']' or '}'?)");
     }
 
+    private static ExtractedString extractString(String jsonString, int fieldStart) {
+        StringBuilder builder = new StringBuilder();
+        while (true) {
+            int i = indexOfSpecial(jsonString, fieldStart);
+            char c = jsonString.charAt(i);
+            if (c == '"') {
+                builder.append(jsonString.substring(fieldStart + 1, i));
+                ExtractedString val = new ExtractedString();
+                val.sourceEnd = i;
+                val.str = builder.toString();
+                return val;
+            } else if (c == '\\') {
+                if (i == jsonString.length() - 1) {
+                    throw new JsonParseException("String did not have ending quote");
+                }
+
+                builder.append(jsonString.substring(fieldStart + 1, i));
+                char escape = jsonString.charAt(i + 1);
+                switch (escape) {
+                    case '"':
+                        builder.append('\"');
+                        break;
+                    case '\\':
+                        builder.append('\\');
+                        break;
+                    case '/':
+                        builder.append('/');
+                        break;
+                    case '\b':
+                        builder.append('\b');
+                        break;
+                    case '\f':
+                        builder.append('\f');
+                        break;
+                    case '\n':
+                        builder.append('\n');
+                        break;
+                    case '\r':
+                        builder.append('\r');
+                        break;
+                    case '\t':
+                        builder.append('\t');
+                        break;
+                }
+                fieldStart = i + 1; // Jump over escape sequence, including last character of escape
+            } else {
+                throw new StringIndexOutOfBoundsException();
+            }
+        }
+    }
+
     /**
-     * Returns the index of either a quotation, or a control character backslash.
+     * Returns the index of either a quotation, or a control character backslash. Skips the first element.
      * !! Do not inline this function, the JVM <3 optimising it, and inlining it slows it down ... somehow.
      * @param str content string to find quote or backslash
      * @param start start index to search
@@ -393,7 +444,7 @@ public class JsonParse {
         return start;
     }
 
-    enum Type {
+    private enum Type {
         ARRAY,
         OBJECT,
         HEURISTIC,
@@ -403,7 +454,7 @@ public class JsonParse {
         CONSTANT
     }
 
-    static class State {
+    private static class State {
         final String propertyName;
         final Object container;
         final Type type;
@@ -413,6 +464,11 @@ public class JsonParse {
             this.container = container;
             this.type = type;
         }
+    }
+
+    private static class ExtractedString {
+        int sourceEnd;
+        String str;
     }
 
     public static void main(String[] args) {

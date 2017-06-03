@@ -1,16 +1,12 @@
 package ca.fuzzlesoft;
 
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import ca.fuzzlesoft.JsonParse.Type;
 
 /**
  * @author mitch
@@ -208,8 +204,8 @@ public class JsonParseTest {
 
     @Test
     public void shouldTestIndividualNumbers() {
-        Assert.assertEquals(1234L, JsonParse.number("\n\t1234  "));
-        Assert.assertEquals(Double.valueOf("-13.3e+7"), JsonParse.number("\n\t-13.3e+7  "));
+        Assert.assertEquals(1234L, JsonParse.number("\n\t1234"));
+        Assert.assertEquals(Double.valueOf("-13.3e+7"), JsonParse.number("\n\t-13.3e+7"));
     }
 
     @Test
@@ -225,15 +221,15 @@ public class JsonParseTest {
 
     @Test
     public void shouldConvertControlSequences() {
-        Assert.assertEquals("\"", JsonParse.string("\\\""));
-        Assert.assertEquals("\\", JsonParse.string("\\\\"));
-        Assert.assertEquals("/", JsonParse.string("\\/"));
-        Assert.assertEquals("\b", JsonParse.string("\\b"));
-        Assert.assertEquals("\f", JsonParse.string("\\f"));
-        Assert.assertEquals("\n", JsonParse.string("\\n"));
-        Assert.assertEquals("\r", JsonParse.string("\\r"));
-        Assert.assertEquals("\t", JsonParse.string("\\t"));
-        Assert.assertEquals("A", JsonParse.string("\\u0041"));
+        Assert.assertEquals("\"", JsonParse.string("\"\\\"\""));
+        Assert.assertEquals("\\", JsonParse.string("\"\\\\\""));
+        Assert.assertEquals("/", JsonParse.string("\"\\/\""));
+        Assert.assertEquals("\b", JsonParse.string("\"\\b\""));
+        Assert.assertEquals("\f", JsonParse.string("\"\\f\""));
+        Assert.assertEquals("\n", JsonParse.string("\"\\n\""));
+        Assert.assertEquals("\r", JsonParse.string("\"\\r\""));
+        Assert.assertEquals("\t", JsonParse.string("\"\\t\""));
+        Assert.assertEquals("A", JsonParse.string("\"\\u0041\""));
     }
 
     @Test
