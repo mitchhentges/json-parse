@@ -36,13 +36,13 @@ System.out.println(unkown.getClass());
 <dependency>
     <groupId>ca.fuzzlesoft</groupId>
     <artifactId>json-parse</artifactId>
-    <version>1.3.3</version>
+    <version>1.3.4</version>
 </dependency>
 ```
 
 **Gradle**
 ```
-compile 'ca.fuzzlesoft:json-parse:1.3.3'
+compile 'ca.fuzzlesoft:json-parse:1.3.4'
 ```
 
 ## Features

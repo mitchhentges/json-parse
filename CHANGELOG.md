@@ -1,3 +1,11 @@
+# 1.3.4
+
+Bugfix release
+
+* Fix formatting of some JsonParseException errors, such as "Unexpected character ... instead of array value"
+* Properly handles escape sequences and unicode code points
+* Fixes issue where if a string ended with an escaped double-quote, a failure would be encountered
+
 # 1.3.3
 
 Bugfix release
