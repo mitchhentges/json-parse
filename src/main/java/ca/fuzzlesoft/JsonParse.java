@@ -111,7 +111,7 @@ public class JsonParse {
                 case NAME:
                     // Fast-forward to destination, which is an ending quote
                     do {
-                        i = jsonString.indexOf('"', i + 1);
+                        i = indexOfSpecial(jsonString, i);
                     } while (jsonString.charAt(i - 1) == '\\');
 
                     propertyName = jsonString.substring(fieldStart, i);
@@ -122,7 +122,7 @@ public class JsonParse {
                 case STRING:
                     // Fast-forward to end of string value, which is a '"' character
                     do {
-                        i = jsonString.indexOf('"', i + 1);
+                        i = indexOfSpecial(jsonString, i);
                     } while (jsonString.charAt(i - 1) == '\\');
 
                     value = jsonString.substring(fieldStart, i);
@@ -232,7 +232,8 @@ public class JsonParse {
                             expectingColon = false;
                             i++;
                         } else {
-                            throw new JsonParseException(stateStack, "wasn't followed by too many colons");
+                            stateStack.push(new State(propertyName, currentContainer, Type.OBJECT));
+                            throw new JsonParseException(stateStack, "was followed by too many colons");
                         }
                     } else if (current == '"') {
                         currentType = Type.STRING;
@@ -380,7 +381,7 @@ public class JsonParse {
      * @return index of the first quote or backslash found at or after `start`
      */
     private static int indexOfSpecial(String str, int start) {
-        while (++start <= str.length() && str.charAt(start) != '"' && str.charAt(start) != '\\');
+        while (++start < str.length() && str.charAt(start) != '"' && str.charAt(start) != '\\');
         return start;
     }
 
@@ -404,5 +405,19 @@ public class JsonParse {
             this.container = container;
             this.type = type;
         }
+    }
+
+    public static void main(String[] args) {
+        String toParse = "{\"a\":true, \"foo\": \"confirmed\", \"bar\": -3.642}";
+
+        int iterations = 10000;
+        long start = System.currentTimeMillis();
+
+        for (int i = 0; i < iterations; i++) {
+            JsonParse.map(toParse);
+        }
+
+        long jsonParse = System.currentTimeMillis() - start;
+        System.out.println(jsonParse);
     }
 }

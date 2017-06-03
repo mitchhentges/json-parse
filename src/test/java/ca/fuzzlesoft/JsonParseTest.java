@@ -246,6 +246,7 @@ public class JsonParseTest {
         assertFormatting("{\"a\":{\"b\":{\"c\": fasle}}}", "<root>.a.b.c: \"fasle\" is not a valid constant. Missing quotes?");
         assertFormatting("{\"a\":true \"b\":false}", "<root>.a: wasn't followed by a comma");
         assertFormatting("{\"a\" true}", "<root>.a: wasn't followed by a colon");
+        assertFormatting("{\"a\"::true}", "<root>.a: was followed by too many colons");
         assertFormatting("{\"a\": true, v}", "<root>: unexpected character 'v' where a property name is expected. Missing quotes?");
         assertFormatting("{\"a\": v}", "<root>.a: \"v\" is not a valid constant. Missing quotes?");
     }
