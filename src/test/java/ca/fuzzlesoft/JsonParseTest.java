@@ -229,11 +229,17 @@ public class JsonParseTest {
         Assert.assertEquals("\n", JsonParse.string("\"\\n\""));
         Assert.assertEquals("\r", JsonParse.string("\"\\r\""));
         Assert.assertEquals("\t", JsonParse.string("\"\\t\""));
+        Assert.assertEquals("A", JsonParse.string("\"\\u0041\""));
     }
 
     @Test
     public void shouldUseRootForTopLevelException() {
         assertFormatting("bork", "<root>: \"bork\" is not a valid constant. Missing quotes?");
+    }
+
+    @Test
+    public void shouldThrowErrorIfNoJsonToParse() {
+        assertFormatting("", "Provided JSON string did not contain a value");
     }
 
     @Test
@@ -252,6 +258,7 @@ public class JsonParseTest {
         assertFormatting("[v]", "<root>.[0]: \"v\" is not a valid constant. Missing quotes?");
         assertFormatting("{\"a\": [{v}]}", "<root>.a.[0]: unexpected character 'v' where a property name is expected. Missing quotes?");
         assertFormatting("[{\"key\":\"value\"},{\"other\":bap}]", "<root>.[1].other: \"bap\" is not a valid constant. Missing quotes?");
+        assertFormatting("[!]", "<root>.[0]: Unexpected character \"!\" instead of array value");
     }
 
     private void assertFormatting(String test, String expected) {

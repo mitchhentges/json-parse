@@ -75,11 +75,10 @@ public class JsonParse {
         Object value;
         char current;
 
-        while (Constants.isWhitespace((current = jsonString.charAt(i)))) {
-            if (i >= end) {
-                throw new JsonParseException("Provided string did not contain a value");
-            }
-            i++;
+        try {
+            while (Constants.isWhitespace((current = jsonString.charAt(i)))) i++;
+        } catch (IndexOutOfBoundsException e) {
+            throw new JsonParseException("Provided JSON string did not contain a value");
         }
 
         if (current == '{') {
@@ -363,7 +362,7 @@ public class JsonParse {
                             return currentContainer;
                         }
                     } else if (Constants.isLetter(current)) {
-                        // Assume parsing a constant ("null", "true", "false", etc)
+                        // Assume parsing a   ("null", "true", "false", etc)
                         currentType = Type.CONSTANT;
                         fieldStart = i;
                     } else if (Constants.isNumberStart(current)) {
@@ -372,7 +371,7 @@ public class JsonParse {
                         fieldStart = i;
                     } else {
                         stateStack.push(new State(propertyName, currentContainer, Type.ARRAY));
-                        throw new JsonParseException("Unexpected character \"" + current + "\" instead of array value");
+                        throw new JsonParseException(stateStack, "Unexpected character \"" + current + "\" instead of array value");
                     }
                     break;
             }
@@ -393,13 +392,10 @@ public class JsonParse {
                 val.str = builder.toString();
                 return val;
             } else if (c == '\\') {
-                if (i == jsonString.length() - 1) {
-                    throw new JsonParseException("String did not have ending quote");
-                }
-
                 builder.append(jsonString.substring(fieldStart + 1, i));
-                char escape = jsonString.charAt(i + 1);
-                switch (escape) {
+
+                c = jsonString.charAt(i + 1);
+                switch (c) {
                     case '"':
                         builder.append('\"');
                         break;
@@ -424,10 +420,16 @@ public class JsonParse {
                     case 't':
                         builder.append('\t');
                         break;
+                    case 'u':
+                        builder.append(Character.toChars(
+                                Integer.parseInt(jsonString.substring(i + 2, i + 6), 16)));
+                        fieldStart = i + 5; // Jump over escape sequence and code point
+                        continue;
+
                 }
-                fieldStart = i + 1; // Jump over escape sequence, including last character of escape
+                fieldStart = i + 1; // Jump over escape sequence
             } else {
-                throw new StringIndexOutOfBoundsException();
+                throw new IndexOutOfBoundsException();
             }
         }
     }
