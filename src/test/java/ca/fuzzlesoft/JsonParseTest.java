@@ -229,7 +229,6 @@ public class JsonParseTest {
         Assert.assertEquals("\n", JsonParse.string("\"\\n\""));
         Assert.assertEquals("\r", JsonParse.string("\"\\r\""));
         Assert.assertEquals("\t", JsonParse.string("\"\\t\""));
-        Assert.assertEquals("A", JsonParse.string("\"\\u0041\""));
     }
 
     @Test

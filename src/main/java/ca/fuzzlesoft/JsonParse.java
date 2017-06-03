@@ -409,19 +409,19 @@ public class JsonParse {
                     case '/':
                         builder.append('/');
                         break;
-                    case '\b':
+                    case 'b':
                         builder.append('\b');
                         break;
-                    case '\f':
+                    case 'f':
                         builder.append('\f');
                         break;
-                    case '\n':
+                    case 'n':
                         builder.append('\n');
                         break;
-                    case '\r':
+                    case 'r':
                         builder.append('\r');
                         break;
-                    case '\t':
+                    case 't':
                         builder.append('\t');
                         break;
                 }
@@ -429,6 +429,18 @@ public class JsonParse {
             } else {
                 throw new StringIndexOutOfBoundsException();
             }
+        }
+    }
+
+    static class State {
+        final String propertyName;
+        final Object container;
+        final Type type;
+
+        State(String propertyName, Object container, Type type) {
+            this.propertyName = propertyName;
+            this.container = container;
+            this.type = type;
         }
     }
 
@@ -443,7 +455,6 @@ public class JsonParse {
         while (++start < str.length() && str.charAt(start) != '"' && str.charAt(start) != '\\');
         return start;
     }
-
     private enum Type {
         ARRAY,
         OBJECT,
@@ -452,18 +463,7 @@ public class JsonParse {
         STRING,
         NUMBER,
         CONSTANT
-    }
 
-    private static class State {
-        final String propertyName;
-        final Object container;
-        final Type type;
-
-        State(String propertyName, Object container, Type type) {
-            this.propertyName = propertyName;
-            this.container = container;
-            this.type = type;
-        }
     }
 
     private static class ExtractedString {
