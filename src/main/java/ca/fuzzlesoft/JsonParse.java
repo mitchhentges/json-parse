@@ -109,12 +109,20 @@ public class JsonParse {
             current = jsonString.charAt(i);
             switch (currentType) {
                 case NAME:
-                    // Fast-forward to destination, which is an ending quote
-                    do {
+                    StringBuilder builder = new StringBuilder();
+                    int beginning = fieldStart;
+                    while (true) {
                         i = indexOfSpecial(jsonString, i);
-                    } while (jsonString.charAt(i - 1) == '\\');
+                        char c = jsonString.charAt(i);
+                        if (c == '"') {
+                            builder.append(jsonString.substring(beginning, i));
+                            break;
+                        } else if (c == '/') {
 
-                    propertyName = jsonString.substring(fieldStart, i);
+                        }
+                    }
+
+                    propertyName = builder.toString();
                     currentType = Type.HEURISTIC;
                     expectingColon = true;
                     i++;
