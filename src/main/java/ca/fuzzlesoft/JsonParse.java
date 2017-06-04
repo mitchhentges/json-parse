@@ -1,5 +1,9 @@
 package ca.fuzzlesoft;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -471,5 +475,41 @@ public class JsonParse {
     private static class ExtractedString {
         int sourceEnd;
         String str;
+    }
+
+    public static void main(String[] args) {
+        int iterations = Integer.parseInt(args[0]);
+        String implementation = args[1];
+
+        String[] toParse = new String[iterations];
+        for (int i = 0; i < toParse.length; i++) {
+            String uuid = UUID.randomUUID().toString();
+            Boolean bool = Math.floor(Math.random() * 2) == 0;
+            double rand = Math.random();
+            toParse[i] = "{\"a\": " + bool + ", \"uuid\": \"" + uuid + "\", \"rand\": " + rand + "}";
+        }
+
+        if ("fasterxml".equals(implementation)) {
+            long before = System.currentTimeMillis();
+            ObjectMapper mapper = new ObjectMapper();
+
+            for (String parse : toParse) {
+                try {
+                    mapper.readValue(parse, new TypeReference<Map<String, Object>>(){});
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            System.out.println(System.currentTimeMillis() - before);
+        } else if ("fuzzlesoft".equals(implementation)) {
+            long before = System.currentTimeMillis();
+
+            for (String parse : toParse) {
+                JsonParse.map(parse);
+            }
+
+            System.out.println(System.currentTimeMillis() - before);
+        }
     }
 }
