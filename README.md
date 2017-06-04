@@ -5,7 +5,7 @@ Jackson with an extremely small memory and size footprint.
 
 _Lower is better:_
 
-![](resources/comparison-v1.3.0.png)
+![](resources/comparison-v1.3.4.png)
 
 [Wiki page explaining source of results](https://github.com/mitchhentges/json-parse/wiki/Comparison-with-FasterXML-Jackson)
 
